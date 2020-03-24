@@ -2844,7 +2844,7 @@ double rho_gdm_of_a(struct background *pba,
   double a_rel = a / pba->a_today;
 
   /*time-only binned GDM case */ 
-  if(pba->type_gdm=time_only_bins_gdm){
+  if(pba->type_gdm==time_only_bins_gdm){
 
     double previous_time=0.;
 
@@ -2929,7 +2929,7 @@ double w_gdm_of_a(struct background *pba,
   double w=0.;
 
   /* Time-only binned GDM case */ 
-  if(pba->type_gdm=time_only_bins_gdm){
+  if(pba->type_gdm==time_only_bins_gdm){
     w=oneD_pixel(pba, a ,w_piece);
   }
 
@@ -2946,7 +2946,7 @@ double ca2_gdm_of_a(struct background *pba,
   double ca2=0.;
 
   /* Time-only binned GDM case */ 
-  if(pba->type_gdm=time_only_bins_gdm){
+  if(pba->type_gdm==time_only_bins_gdm){
     ca2=oneD_pixel(pba, a ,ca2_piece);
   }
 

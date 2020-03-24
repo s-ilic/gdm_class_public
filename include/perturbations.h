@@ -120,8 +120,8 @@ struct perturbs
   short has_niv;     /**< do we need isocurvature niv mode? */
 
   /* GDM_CLASS: new perturbation variables */
-  short has_dynamic_shear_fld;  /**< do we have a dynamical or nondynamical fluid shear?*/
-  short has_dynamic_pinad_fld;  /**< do we have a dynamical or nondynamical fluid non-adiabatic pressure?*/ 
+  short dynamic_shear_gdm;  /**< do we have a dynamical or nondynamical fluid shear?*/
+  short dynamic_pinad_gdm;  /**< do we have a dynamical or nondynamical fluid non-adiabatic pressure?*/ 
 
   /* perturbed recombination */
   /** Do we want to consider perturbed temperature and ionization fraction? */

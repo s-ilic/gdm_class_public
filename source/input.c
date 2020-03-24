@@ -848,15 +848,15 @@ int input_read_parameters(
     }
   
     /* Sanity checks */
-    class_test((pba->dynamic_shear_gdm == _TRUE_) && (pba->dynamic_pinad_gdm = _TRUE_),
+    class_test((ppt->dynamic_shear_gdm == _TRUE_) && (ppt->dynamic_pinad_gdm == _TRUE_),
                errmsg,
                "You cannot have both dynamic_shear_gdm and dynamic_pinad_gdm set to 'yes', choose only one.");
-    class_test((pba->dynamic_shear_gdm == _FALSE_) && (pba->dynamic_pinad_gdm = _FALSE_),
+    class_test((ppt->dynamic_shear_gdm == _FALSE_) && (ppt->dynamic_pinad_gdm == _FALSE_),
                errmsg,
                "You cannot have both dynamic_shear_gdm and dynamic_pinad_gdm set to 'no', choose at least one.");
   
     /* Binned time-dependent-only GDM */
-    if (pba->type_gdm=time_only_bins_gdm){
+    if (pba->type_gdm==time_only_bins_gdm){
       
       // User decides if they want smooth transition between bins (yes by default)
       class_call(parser_read_string(pfc,
@@ -3397,7 +3397,6 @@ int input_default_params(
   pba->smooth_bins_gdm = _TRUE_;
   pba->time_transition_width_gdm = 5.;
   /* END GDM_CLASS */
-  ppt->dynamic_shear_gdm
   pba->Omega0_cdm = 0.12038/pow(pba->h,2);
   pba->Omega0_dcdmdr = 0.0;
   pba->Omega0_dcdm = 0.0;
