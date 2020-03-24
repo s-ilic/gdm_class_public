@@ -14,6 +14,13 @@
 #define _class_print_species_(name,type) \
 printf("-> %-30s Omega = %-15g , omega = %-15g\n",name,pba->Omega0_##type,pba->Omega0_##type*pba->h*pba->h);
 
+/** GDM_CLASS: maximum number of time bins */
+#define _MAX_NUMBER_OF_TIME_BINS_ 100
+enum type_options_gdm {
+    time_only_bins_gdm  /**< GDM parameters binned in scale factor-space */
+};
+/* END GDM_CLASS */
+
 /** list of possible types of spatial curvature */
 
 enum spatial_curvature {flat,open,closed};
@@ -54,6 +61,17 @@ struct background
   double T_cmb; /**< \f$ T_{cmb} \f$: current CMB temperature in Kelvins */
 
   double Omega0_b; /**< \f$ \Omega_{0 b} \f$: baryons */
+
+  /* GDM_CLASS: new GDM variables */
+  double Omega0_gdm; /**< \f$ \Omega_{0 gdm} \f$: GDM */
+  int time_bins_num_gdm;  /**< \f$ number of time bins */
+  double  w_values_gdm[_MAX_NUMBER_OF_TIME_BINS_];   /**< \f$ values of w bins */
+  double  cs2_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of cs2 bins */
+  double  cv2_values_gdm[_MAX_NUMBER_OF_TIME_BINS_];  /**< \f$ values of cv2 bins */  
+  double  time_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of pixel edges of a-bins */  
+  double  time_transition_width_gdm;    /**< \f$ a number of order unity that determines the width of the smooth transition of time bins*/    
+  short   smooth_bins_gdm; /**< \f$ flag (default yes) whether to use smooth bins */
+  /* END GDM_CLASS */
 
   double Omega0_cdm; /**< \f$ \Omega_{0 cdm} \f$: cold dark matter */
 
@@ -184,6 +202,9 @@ struct background
 
   int index_bg_rho_g;         /**< photon density */
   int index_bg_rho_b;         /**< baryon density */
+  int index_bg_rho_gdm;       /**< GDM_CLASS: gdm density */
+  int index_bg_w_gdm;         /**< GDM_CLASS: gdm equation of state */
+  int index_bg_ca2_gdm;       /**< GDM_CLASS: gdm ca2 */
   int index_bg_rho_cdm;       /**< cdm density */
   int index_bg_rho_lambda;    /**< cosmological constant density */
   int index_bg_rho_fld;       /**< fluid density */
@@ -305,6 +326,18 @@ struct background
   short has_idr;       /**< presence of interacting dark radiation? */
   short has_idm_dr;    /**< presence of dark matter interacting with dark radiation? */
   short has_curvature; /**< presence of global spatial curvature? */
+
+  //@}
+
+  /* GDM_CLASS */
+  /** @name - flags GDM parametrization
+      *
+      *
+      */
+
+  //@{
+      
+  enum type_options_gdm type_gdm; /**< flags GDM parametrization */
 
   //@}
 
@@ -553,6 +586,50 @@ extern "C" {
   int background_output_budget(
                struct background* pba
                );
+
+  /** GDM_CLASS: new GDM functions **/
+
+  double min_arr(
+               const double *arr,
+               int length
+               );
+
+  double w_piece(
+               double lnap,
+               double awidth,
+               double w1, 
+               double w2
+               );
+
+  double ca2_piece(
+               double lnap,
+               double awidth,
+               double w1,
+               double w2
+               );
+
+  double rho_piece(
+               double lnap, 
+               double awidth,
+               double w1,
+               double w2
+               );  
+
+  double rho_gdm_of_a(
+               struct background *pba,
+               double a
+               );
+
+  double w_gdm_of_a(
+               struct background *pba,
+               double a
+               );
+  
+  double ca2_gdm_of_a(
+               struct background *pba,
+               double a
+               );
+
 
 #ifdef __cplusplus
 }
