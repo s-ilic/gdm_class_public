@@ -776,6 +776,217 @@ int input_read_parameters(
 
   Omega_tot += pba->Omega0_b;
 
+
+  /** - GDM_CLASS : Omega_0_gdm (gdm fluid) */
+  
+  class_call(parser_read_double(pfc,"Omega_gdm",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  class_call(parser_read_double(pfc,"omega_gdm",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+             errmsg,
+             "In input file, you can only enter one of Omega_gdm or omega_gdm, choose one");
+  if (flag1 == _TRUE_)
+    pba->Omega0_gdm = param1;
+  if (flag2 == _TRUE_)
+    pba->Omega0_gdm = param2/pba->h/pba->h;
+
+  Omega_tot += pba->Omega0_gdm;
+
+  if (pba->Omega0_gdm != 0.) {
+  
+    /* Selecting a GDM model */
+    class_call(parser_read_string(pfc,"type_gdm",&string1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    if (flag1 == _TRUE_) {
+      /* Binned time-dependent-only GDM */
+      if (strcmp(string1,"time_only_bins") == 0) {
+        pba->type_gdm=time_only_bins_gdm;
+        if (pba->background_verbose>0) {
+          printf("Using a binned time-dependent-only GDM model\n");
+        }
+      }
+      /* Future GDM model(s) to be implemented */
+      /*
+      else if (strcmp(string1,"new_model") == 0) {
+        pba->type_gdm=new_model_gdm;
+        if (pba->background_verbose>0) {
+          printf("Using a 'new_model' GDM model\n");
+        }
+      }
+      */
+      else {
+        class_stop(errmsg,"You wrote 'type_gdm = %s' which is not part of the GDM types   supported (so far: 'time_only_bins').",string1);
+      }
+    }
+  
+    /* Flag for dynamic shear and algebraic non-adiabatic pressure */
+    class_call(parser_read_string(pfc,
+                                  "dynamic_shear_gdm",
+                                  &(string1),
+                                  &(flag1),
+                                  errmsg),
+               errmsg,
+               errmsg);
+    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
+      ppt->dynamic_shear_gdm = _TRUE_;
+    }
+  
+    /* Flag for algebraic shear and dynamic non-adiabatic pressure */
+    class_call(parser_read_string(pfc,
+                                  "dynamic_pinad_gdm",
+                                  &(string1),
+                                  &(flag1),
+                                  errmsg),
+               errmsg,
+               errmsg);
+    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
+      ppt->dynamic_pinad_gdm = _TRUE_;
+    }
+  
+    /* Sanity checks */
+    class_test((pba->dynamic_shear_gdm == _TRUE_) && (pba->dynamic_pinad_gdm = _TRUE_),
+               errmsg,
+               "You cannot have both dynamic_shear_gdm and dynamic_pinad_gdm set to 'yes', choose only one.");
+    class_test((pba->dynamic_shear_gdm == _FALSE_) && (pba->dynamic_pinad_gdm = _FALSE_),
+               errmsg,
+               "You cannot have both dynamic_shear_gdm and dynamic_pinad_gdm set to 'no', choose at least one.");
+  
+    /* Binned time-dependent-only GDM */
+    if (pba->type_gdm=time_only_bins_gdm){
+      
+      // User decides if they want smooth transition between bins (yes by default)
+      class_call(parser_read_string(pfc,
+                                    "smooth_bins_gdm",
+                                    &(string1),
+                                    &(flag1),
+                                    errmsg),
+                 errmsg,
+                 errmsg);
+      if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
+        pba->smooth_bins_gdm = _TRUE_;
+        // User chooses a custom width for smooth transition
+        class_read_double("time_transition_width_gdm",pba->time_transition_width_gdm);
+      }
+  
+      // User-defined time bins 
+      class_call(parser_read_list_of_doubles(pfc,
+                                             "time_values_gdm",
+                                             &(int1),
+                                             &(pointer1),
+                                             &flag1,
+                                             errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag1 == _TRUE_) {
+        pba->time_bins_num_gdm = int1 + 1;
+        class_test(pba->time_bins_num_gdm > _MAX_NUMBER_OF_TIME_BINS_,
+                   errmsg,
+                   "You requested too many (%d) time bins for your GDM model; you need to increase _MAX_NUMBER_OF_TIME_BINS_ (currently %d) in include/background.  h",
+                   pba->time_bins_num_gdm,
+                   _MAX_NUMBER_OF_TIME_BINS_);
+        for (i=0; i<int1; i++) {
+          pba->time_values_gdm[i] = pointer1[i];
+        }
+        pba->time_values_gdm[int1]=pba->a_today;
+        free(pointer1);
+      }
+      // Defaults to a single bin
+      else {
+        pba->time_bins_num_gdm = 1;
+        pba->time_values_gdm[0]=pba->a_today;
+      }
+  
+      // User-defined equation of state values in time bins 
+      class_call(parser_read_list_of_doubles(pfc,
+                                             "w_values_gdm",
+                                             &(int1),
+                                             &(pointer1),
+                                             &flag1,
+                                             errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag1 == _TRUE_) {
+        class_test(int1 != pba->time_bins_num_gdm,
+                   errmsg,
+                   "You need to input the same number of 'w_values_gdm' (currently %d) as the number of time bins (currently %d).",
+                   int1,
+                   pba->time_bins_num_gdm);
+        for (i=0; i<int1; i++) {
+          pba->w_values_gdm[i] = pointer1[i];
+        }
+          free(pointer1); 
+      }
+      // Defaults to w = 0 in all bins 
+      else {
+        for (i=0; i<pba->time_bins_num_gdm; i++) {
+          pba->w_values_gdm[i] = 0.;
+        }
+      }
+  
+      // User-defined sound speed values in time bins 
+      class_call(parser_read_list_of_doubles(pfc,
+                                             "cs2_values_gdm",
+                                             &(int1),
+                                             &(pointer1),
+                                             &flag1,
+                                             errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag1 == _TRUE_) {
+        class_test(int1 != pba->time_bins_num_gdm,
+                   errmsg,
+                   "You need to input the same number of 'cs2_values_gdm' (currently %d) as the number of time bins (currently %d).",
+                   int1,
+                   pba->time_bins_num_gdm);
+        for (i=0; i<int1; i++) {
+          pba->cs2_values_gdm[i] = pointer1[i];
+        }
+          free(pointer1); 
+      }
+      // Defaults to cs2 = 0 in all bins 
+      else {
+        for (i=0; i<pba->time_bins_num_gdm; i++) {
+          pba->cs2_values_gdm[i] = 0.;
+        }
+      }
+  
+      // User-defined viscosity values in time bins 
+      class_call(parser_read_list_of_doubles(pfc,
+                                             "cv2_values_gdm",
+                                             &(int1),
+                                             &(pointer1),
+                                             &flag1,
+                                             errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag1 == _TRUE_) {
+        class_test(int1 != pba->time_bins_num_gdm,
+                   errmsg,
+                   "You need to input the same number of 'cv2_values_gdm' (currently %d) as the number of time bins (currently %d).",
+                   int1,
+                   pba->time_bins_num_gdm);
+        for (i=0; i<int1; i++) {
+          pba->cv2_values_gdm[i] = pointer1[i];
+        }
+          free(pointer1); 
+      }
+      // Defaults to cv2 = 0 in all bins 
+      else {
+        for (i=0; i<pba->time_bins_num_gdm; i++) {
+          pba->cv2_values_gdm[i] = 0.;
+        }
+      }
+
+    }
+  
+  }
+
+  /** - END GDM_CLASS */
+
   /** - Omega_0_ur (ultra-relativistic species / massless neutrino) */
 
   /* (a) try to read N_ur */
@@ -3178,6 +3389,15 @@ int input_default_params(
   pba->Omega0_idm_dr = 0.0;
   pba->T_idr = 0.0;
   pba->Omega0_b = 0.022032/pow(pba->h,2);
+  /* GDM_CLASS: default values of new GDM variables */ 
+  pba->Omega0_gdm = 0.;
+  pba->type_gdm=time_only_bins_gdm;
+  ppt->dynamic_shear_gdm = _TRUE_;
+  ppt->dynamic_pinad_gdm = _FALSE_;
+  pba->smooth_bins_gdm = _TRUE_;
+  pba->time_transition_width_gdm = 5.;
+  /* END GDM_CLASS */
+  ppt->dynamic_shear_gdm
   pba->Omega0_cdm = 0.12038/pow(pba->h,2);
   pba->Omega0_dcdmdr = 0.0;
   pba->Omega0_dcdm = 0.0;
@@ -3205,7 +3425,7 @@ int input_default_params(
   pba->Omega0_k = 0.;
   pba->K = 0.;
   pba->sgnK = 0;
-  pba->Omega0_lambda = 1.-pba->Omega0_k-pba->Omega0_g-pba->Omega0_ur-pba->Omega0_b-pba->Omega0_cdm-pba->Omega0_ncdm_tot-pba->Omega0_dcdmdr-pba->Omega0_idm_dr-pba->Omega0_idr;
+  pba->Omega0_lambda = 1.-pba->Omega0_k-pba->Omega0_g-pba->Omega0_ur-pba->Omega0_b-pba->Omega0_gdm-pba->Omega0_cdm-pba->Omega0_ncdm_tot-pba->Omega0_dcdmdr-pba->Omega0_idm_dr-pba->Omega0_idr; /* GDM_CLASS: added default GDM contribution */
   pba->Omega0_fld = 0.;
   pba->a_today = 1.;
   pba->use_ppf = _TRUE_;
@@ -3949,7 +4169,7 @@ int input_get_guess(double *xguess,
       ba.H0 = ba.h *  1.e5 / _c_;
       break;
     case Omega_dcdmdr:
-      Omega_M = ba.Omega0_cdm+ba.Omega0_idm_dr+ba.Omega0_dcdmdr+ba.Omega0_b;
+      Omega_M = ba.Omega0_cdm+ba.Omega0_idm_dr+ba.Omega0_dcdmdr+ba.Omega0_b+ba.Omega0_gdm; /* GDM_CLASS: added GDM contribution */
       /* This formula is exact in a Matter + Lambda Universe, but only
          for Omega_dcdm, not the combined.
          sqrt_one_minus_M = sqrt(1.0 - Omega_M);
@@ -3968,7 +4188,7 @@ int input_get_guess(double *xguess,
       //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
       break;
     case omega_dcdmdr:
-      Omega_M = ba.Omega0_cdm+ba.Omega0_idm_dr+ba.Omega0_dcdmdr+ba.Omega0_b;
+      Omega_M = ba.Omega0_cdm+ba.Omega0_idm_dr+ba.Omega0_dcdmdr+ba.Omega0_b+ba.Omega0_gdm; /* GDM_CLASS: added GDM contribution */
       /* This formula is exact in a Matter + Lambda Universe, but only
          for Omega_dcdm, not the combined.
          sqrt_one_minus_M = sqrt(1.0 - Omega_M);
@@ -4012,7 +4232,7 @@ int input_get_guess(double *xguess,
           Omega_ini_dcdm -> Omega_dcdmdr and
           omega_ini_dcdm -> omega_dcdmdr */
       Omega0_dcdmdr *=pfzw->target_value[index_guess];
-      Omega_M = ba.Omega0_cdm+ba.Omega0_idm_dr+Omega0_dcdmdr+ba.Omega0_b;
+      Omega_M = ba.Omega0_cdm+ba.Omega0_idm_dr+Omega0_dcdmdr+ba.Omega0_b+ba.Omega0_gdm; /* GDM_CLASS: added GDM contribution */
       gamma = ba.Gamma_dcdm/ba.H0;
       if (gamma < 1)
         a_decay = 1.0;
