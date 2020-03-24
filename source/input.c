@@ -894,10 +894,11 @@ int input_read_parameters(
         pba->time_values_gdm[int1]=pba->a_today;
         free(pointer1);
       }
-      // Defaults to a single bin
+      // Defaults to two arbitrary chosen bins (could be dealt better)
       else {
-        pba->time_bins_num_gdm = 1;
-        pba->time_values_gdm[0]=pba->a_today;
+        pba->time_bins_num_gdm = 2;
+        pba->time_values_gdm[0]=pba->a_today/2.;
+        pba->time_values_gdm[1]=pba->a_today;
       }
   
       // User-defined equation of state values in time bins 
