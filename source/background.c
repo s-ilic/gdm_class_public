@@ -312,6 +312,16 @@ int background_functions(
   p_tot += 0;
   rho_m += pvecback[pba->index_bg_rho_b];
 
+  /* GDM_CLASS : gdm */
+  if (pba->has_gdm == _TRUE_) {
+    pvecback[pba->index_bg_w_gdm] = w_gdm_of_a(pba,a);
+    pvecback[pba->index_bg_ca2_gdm] = ca2_gdm_of_a(pba,a);
+    pvecback[pba->index_bg_rho_gdm] = rho_gdm_of_a(pba,a);
+    rho_tot += pvecback[pba->index_bg_rho_gdm];
+    p_tot += pvecback[pba->index_bg_w_gdm] * pvecback[pba->index_bg_rho_gdm];
+    rho_m += pvecback[pba->index_bg_rho_gdm];
+  }
+
   /* cdm */
   if (pba->has_cdm == _TRUE_) {
     pvecback[pba->index_bg_rho_cdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a_rel,3);
@@ -876,6 +886,7 @@ int background_indices(
   /** - initialize all flags: which species are present? */
 
   pba->has_cdm = _FALSE_;
+  pba->has_gdm = _FALSE_; // GDM_CLASS : new flag
   pba->has_ncdm = _FALSE_;
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
@@ -889,6 +900,10 @@ int background_indices(
 
   if (pba->Omega0_cdm != 0.)
     pba->has_cdm = _TRUE_;
+
+  // GDM_CLASS : new flag check
+  if (pba->Omega0_gdm != 0.)
+    pba->has_gdm = _TRUE_;
 
   if (pba->Omega0_ncdm_tot != 0.)
     pba->has_ncdm = _TRUE_;
@@ -939,6 +954,11 @@ int background_indices(
 
   /* - index for rho_b (baryon density) */
   class_define_index(pba->index_bg_rho_b,_TRUE_,index_bg,1);
+
+  /* - GDM_CLASS : indexes for GDM quantities (density, w and ca2) */
+  class_define_index(pba->index_bg_rho_gdm,pba->has_gdm,index_bg,1);
+  class_define_index(pba->index_bg_w_gdm,pba->has_gdm,index_bg,1);
+  class_define_index(pba->index_bg_ca2_gdm,pba->has_gdm,index_bg,1);
 
   /* - index for rho_cdm */
   class_define_index(pba->index_bg_rho_cdm,pba->has_cdm,index_bg,1);
@@ -2248,6 +2268,12 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"comov.snd.hrz.",_TRUE_);
   class_store_columntitle(titles,"(.)rho_g",_TRUE_);
   class_store_columntitle(titles,"(.)rho_b",_TRUE_);
+
+  /* GDM_CLASS : names of newly stored GDM variables */
+  class_store_columntitle(titles,"(.)rho_gdm",pba->has_gdm);
+  class_store_columntitle(titles,"(.)w_gdm",pba->has_gdm);
+  class_store_columntitle(titles,"(.)ca2_gdm",pba->has_gdm);
+
   class_store_columntitle(titles,"(.)rho_cdm",pba->has_cdm);
   if (pba->has_ncdm == _TRUE_){
     for (n=0; n<pba->N_ncdm; n++){
@@ -2309,6 +2335,13 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rs],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_g],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_b],_TRUE_,storeidx);
+
+    /* GDM_CLASS : storing new GDM variables */
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_gdm],pba->has_gdm,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_w_gdm],pba->has_gdm,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_ca2_gdm],pba->has_gdm,storeidx);
+
+
     class_store_double(dataptr,pvecback[pba->index_bg_rho_cdm],pba->has_cdm,storeidx);
     if (pba->has_ncdm == _TRUE_){
       for (n=0; n<pba->N_ncdm; n++){
@@ -2685,4 +2718,238 @@ int background_output_budget(
   }
 
   return _SUCCESS_;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////
+/* GDM_CLASS : new set of GDM-specific functions */
+///////////////////////////////////////////////////
+
+
+/* Returns the minimum value of array */
+double min_arr(const double *arr,
+               int length) {
+  int i;
+  double minimum = arr[0];
+  for (i = 1; i < length; i++) {
+    if (minimum > arr[i]) {
+      minimum = arr[i];
+    }
+  }
+  return minimum;
+}
+
+
+/* Equation for w in given time bin when smoothing is on */
+double w_piece(double lnap,
+               double awidth,
+               double w1,
+               double w2) {
+  return w1/2. + w2/2. + ((w2 - w1)*erf(lnap))/2.;
+}
+
+
+/* Equation for ca2 in given time bin when smoothing is on */
+double ca2_piece(double lnap,
+                 double awidth,
+                 double w1,
+                 double w2) {
+  return w_piece(lnap, 0., w1, w2) +
+        (2.*awidth*(-w2 + w1))/(3.*exp(lnap*lnap)*_SQRT_PI_
+                      *(2 + w1 + w2 + (w2 - w1)*erf(lnap)));
+}
+
+
+/* For the binned GDM case, computes w or ca2 */
+double oneD_pixel(struct background *pba,
+                  double a,
+                  double (*oneD_piece)(double lnap,
+                                       double awidth,
+                                       double w1,
+                                       double w2)) {
+    
+  double a_rel = a / pba->a_today;
+  double previous_time=0.; //this starts at 0 and will be incremented
+  double oneD=0.;
+  int i;
+
+  /* smooth bins case */
+  if(pba->smooth_bins_gdm == _TRUE_){ 
+    double timetable[pba->time_bins_num_gdm]; //contains the values where erf will be stitched together
+    double timeratios[pba->time_bins_num_gdm]; //stitching times over bin edge times
+    double awidth; // transition width of erf
+    double lnap; // ln((a/ atrans)^awidth), time argument of functions w_piece, ca2_piece, rho_piece
+
+    //calculate the geometric mean of pixel centers (=algebraic mean for lna)
+    //because w_piece and rho_piece are stitched together at those times.
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
+      timetable[i]= sqrt(pba->time_values_gdm[i]*pba->time_values_gdm[i+1]);
+      timetable[pba->time_bins_num_gdm-2]=pba->time_values_gdm[pba->time_bins_num_gdm-1]; //replace the last entry by the final bin end
+      timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
+    }
+    
+    //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
+    awidth=pba->time_transition_width_gdm/min_arr(timeratios,pba->time_bins_num_gdm-1);
+
+    //stitch pieces together
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which bin the time a is 
+      if((previous_time < a_rel) && (a_rel <= timetable[i])) {
+        lnap= awidth*log(a_rel/pba->time_values_gdm[i]);
+        // the w1 is later and w2 is the eariler one
+        oneD = oneD_piece(lnap, awidth, pba->w_values_gdm[i], pba->w_values_gdm[i+1]);
+        break;
+      }
+      else {
+        previous_time = timetable[i];
+      }
+    }
+  }
+  /* sharp bins case */
+  else { 
+    for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which stitching region the time a is 
+      if((previous_time < a_rel) && (a_rel <= pba->time_values_gdm[i])) {
+        oneD = pba->w_values_gdm[i];
+        break;
+      }
+      else { 
+        previous_time = pba->time_values_gdm[i];
+      }
+    }
+  }
+
+  return oneD;
+
+}
+
+
+/* Equation for rho in given time bin when smoothing is on */
+double rho_piece(double lnap,
+                 double awidth,
+                 double w1,
+                 double w2) {
+  return exp(
+               (-3.*((w2 - w1)/(exp(lnap*lnap)*_SQRT_PI_) 
+               + lnap*(2. + w1 + w2 + (w2 - w1)*erf(lnap))))/(2.*awidth)
+            );
+}
+
+/* Wrapper for rho_gdm as function of time */
+double rho_gdm_of_a(struct background *pba,
+                    double a) {
+
+  double rho_gdm=0.;
+  double a_rel = a / pba->a_today;
+
+  /*time-only binned GDM case */ 
+  if(pba->type_gdm=time_only_bins_gdm){
+
+    double previous_time=0.;
+
+    /* smooth bins case */  
+    if(pba->smooth_bins_gdm == _TRUE_) { 
+
+      double rho_gdm_table[pba->time_bins_num_gdm-1];  // stores the values rho_gdm at the end of each stitching region
+      rho_gdm_table[pba->time_bins_num_gdm -2]=1.; // end of last pixel is GDM density today
+      double timetable[pba->time_bins_num_gdm]; // stores the stitching times
+      double timeratios[pba->time_bins_num_gdm]; //used to calculate the steepnes of the transition awidth
+      double awidth; //steepnes of the transition
+      double lnap; // =ln((a/ atrans)^awidth) is the argument of the error function
+      double normtable[pba->time_bins_num_gdm-1]; // needed because becaue rho_piece is not normalized
+      int i;
+
+      //calculate the geometric mean of pixel centers (=algebraic mean for lna)
+      //w_piece and rho_piece will be stitched together at those times in timetable.
+      for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
+        timetable[i]= sqrt(pba->time_values_gdm[i]*pba->time_values_gdm[i+1]);
+        timetable[pba->time_bins_num_gdm-2]=pba->a_today; //replace the last entry by a_today
+        timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]); // used to calculate transition width awidth
+      }
+
+      //determine the transition-width using the smallest logarithmic bin width and the external fudge parameter 'time_transition_width_gdm'
+      awidth=pba->time_transition_width_gdm/min_arr(timeratios,pba->time_bins_num_gdm-1);
+
+      //some preliminary evaluation of the density at the stitches
+      for (i=0; i < pba->time_bins_num_gdm -1; i++) {
+        //calculate the density normalization factors at end of stitches
+        lnap = awidth*timeratios[i];
+        normtable[i]=rho_piece(lnap, awidth, pba->w_values_gdm[i], pba->w_values_gdm[i+1]);
+      }
+
+      //calculate the density at the beginning of stitches starting at low redshift
+      for (i=pba->time_bins_num_gdm -3; i >= 0; i--) {
+        lnap = awidth*log(timetable[i]/pba->time_values_gdm[i+1]);
+        rho_gdm_table[i] = rho_gdm_table[i+1]*rho_piece(lnap, awidth, pba->w_values_gdm[i+1], pba->w_values_gdm[i+2])/normtable[i+1];
+      }
+      //now we can interpolate the density inside each stitching region
+      for (i=0; i < pba->time_bins_num_gdm-1; i++) { 
+        if((previous_time < a_rel) && (a_rel <= timetable[i])) { // check if a sits in the bin...
+          lnap= awidth*log(a_rel/pba->time_values_gdm[i]);
+          rho_gdm = rho_gdm_table[i]*rho_piece(lnap, awidth, pba->w_values_gdm[i], pba->w_values_gdm[i+1])/normtable[i]*pba->Omega0_gdm * pow(pba->H0,2); //...and integrate the density starting from the pixel end
+          break;
+        }
+        else {
+          previous_time = timetable[i];  // if a is not in the bin, check the next one.
+        }
+      }
+    }
+    /* sharp bins case */
+    else {
+      double rho_gdm_table[pba->time_bins_num_gdm];  // stores the values rho_gdm at the end of each stitching region
+      rho_gdm_table[pba->time_bins_num_gdm -1]=pba->Omega0_gdm * pow(pba->H0,2); // end of last pixel is GDM density today
+      double * timetable = pba->time_values_gdm;
+      int i;
+      for (i=pba->time_bins_num_gdm -2; i >= 0; i--) {
+        rho_gdm_table[i]=  rho_gdm_table[i+1]/pow(timetable[i]/timetable[i+1],3.*(1.+pba->w_values_gdm[i+1]));
+      } // now we can interpolate the density inside each pixel
+      for (i=0; i < pba->time_bins_num_gdm; i++) { // check if a sits in the bin...
+        if( (previous_time < a_rel) && (a_rel <= timetable[i]) ) {
+          rho_gdm = rho_gdm_table[i]/pow(a_rel/pba->time_values_gdm[i],3.*(1.+pba->w_values_gdm[i])); // and integrate the density starting from the pixel end
+          break;
+        }
+        else {
+          previous_time = timetable[i];  // if a is not in the bin, check the next one.
+        }
+      }
+    }
+  }
+
+  return  rho_gdm;
+
+}
+
+
+/* Wrapper for w_gdm as function of time, related to derivative of rho_gdm */
+/* w = -1 -1/3 dln(rho)/dln(a) */
+double w_gdm_of_a(struct background *pba,
+                  double a) {
+
+  double w=0.;
+
+  /* Time-only binned GDM case */ 
+  if(pba->type_gdm=time_only_bins_gdm){
+    w=oneD_pixel(pba, a ,w_piece);
+  }
+
+  return  w;
+
+}
+
+
+/* Wrapper for ca2_gdm as function of time, related to derivative of w_gdm */
+/* ca2 = w  -1/3 dln(1+w)/dln(a) */
+double ca2_gdm_of_a(struct background *pba,
+                    double a) {
+
+  double ca2=0.;
+
+  /* Time-only binned GDM case */ 
+  if(pba->type_gdm=time_only_bins_gdm){
+    ca2=oneD_pixel(pba, a ,ca2_piece);
+  }
+
+  return  ca2;
+
 }
