@@ -3393,8 +3393,6 @@ int input_default_params(
   /* GDM_CLASS: default values of new GDM variables */ 
   pba->Omega0_gdm = 0.;
   pba->type_gdm=time_only_bins_gdm;
-  ppt->dynamic_shear_gdm = _TRUE_;
-  ppt->dynamic_pinad_gdm = _FALSE_;
   pba->smooth_bins_gdm = _TRUE_;
   pba->time_transition_width_gdm = 5.;
   /* END GDM_CLASS */
@@ -3477,6 +3475,11 @@ int input_default_params(
   pth->m_idm = 1.e11;
 
   /** - perturbation structure */
+
+  /* GDM_CLASS: default values of new GDM variables */ 
+  ppt->dynamic_shear_gdm = _TRUE_;
+  ppt->dynamic_pinad_gdm = _FALSE_;
+  /* END GDM_CLASS */
 
   ppt->has_cl_cmb_temperature = _FALSE_;
   ppt->has_cl_cmb_polarization = _FALSE_;

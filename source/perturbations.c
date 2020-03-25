@@ -510,9 +510,11 @@ int perturb_init(
       printf("Computing sources\n");
   }
 
+  /* GDM_CLASS: TO BE CHECKED: test removed because not true ?
   class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_),
              ppt->error_message,
              "In the synchronous gauge, it is not self-consistent to assume no CDM: the later is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or switch to newtonian gauge");
+  */
 
   class_test ((ppr->tight_coupling_approximation < first_order_MB) ||
               (ppr->tight_coupling_approximation > compromise_CLASS),
@@ -2511,6 +2513,13 @@ int perturb_workspace_init(
 
   if (_scalars_) {
 
+    /* GDM_CLASS: algebraic fluid shear. Although mt stands for metric, */
+    /* this is a natural place for all constrained perturbed quantities */
+    if ((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)) {
+      class_define_index(ppw->index_mt_shear_gdm,_TRUE_,index_mt,1); 
+    }
+    // TO BE CHECKED: add same for dynamic_pinad ? 
+
     /* newtonian gauge */
 
     if (ppt->gauge == newtonian) {
@@ -3133,6 +3142,17 @@ int perturb_prepare_k_output(struct background * pba,
       /* Cold dark matter */
       class_store_columntitle(ppt->scalar_titles,"delta_cdm",pba->has_cdm);
       class_store_columntitle(ppt->scalar_titles,"theta_cdm",pba->has_cdm);
+      /* GDM_CLASS: added gdm fluid */
+      class_store_columntitle(ppt->scalar_titles,"delta_gdm",pba->has_gdm);
+      class_store_columntitle(ppt->scalar_titles,"theta_gdm",pba->has_gdm);
+      class_store_columntitle(ppt->scalar_titles,"shear_gdm",pba->has_gdm);
+      class_store_columntitle(ppt->scalar_titles,"pinad_gdm",pba->has_gdm);
+      /* GDM_CLASS: added new sources */
+      class_store_columntitle(ppt->scalar_titles,"temperC",_TRUE_);
+      class_store_columntitle(ppt->scalar_titles,"ISW1C",_TRUE_);
+      class_store_columntitle(ppt->scalar_titles,"ISW2C",_TRUE_);
+      class_store_columntitle(ppt->scalar_titles,"dopplC",_TRUE_);
+      class_store_columntitle(ppt->scalar_titles,"doppldotC",_TRUE_);
       /* Non-cold dark matter */
       if ((pba->has_ncdm == _TRUE_) && ((ppt->has_density_transfers == _TRUE_) || (ppt->has_velocity_transfers == _TRUE_) || (ppt->has_source_delta_m == _TRUE_))) {
         for(n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++){
@@ -3720,6 +3740,16 @@ int perturb_vector_init(
     class_define_index(ppv->index_pt_delta_cdm,pba->has_cdm,index_pt,1); /* cdm density */
     class_define_index(ppv->index_pt_theta_cdm,pba->has_cdm && (ppt->gauge == newtonian),index_pt,1); /* cdm velocity */
 
+    /* GDM_CLASS: gdm */
+    class_define_index(ppv->index_pt_delta_gdm,pba->has_gdm,index_pt,1); /* gdm density */
+    class_define_index(ppv->index_pt_theta_gdm,pba->has_gdm,index_pt,1); /* gdm velocity */
+    if (ppt->dynamic_shear_gdm == _TRUE_) {
+       class_define_index(ppv->index_pt_shear_gdm,pba->has_gdm,index_pt,1); /* dynamic gdm shear */
+    }
+    if (ppt->dynamic_pinad_gdm == _TRUE_) {
+       class_define_index(ppv->index_pt_pinad_gdm,pba->has_gdm,index_pt,1); /* dynamic gdm \Pi_{nad} */
+    }
+
     /* idm_dr */
     class_define_index(ppv->index_pt_delta_idm_dr,pba->has_idm_dr,index_pt,1); /* idm_dr density */
     class_define_index(ppv->index_pt_theta_idm_dr,pba->has_idm_dr,index_pt,1); /* idm_dr velocity */
@@ -4174,6 +4204,28 @@ int perturb_vector_init(
             ppw->pv->y[ppw->pv->index_pt_theta_cdm];
         }
       }
+
+      /* GDM_CLASS */
+      if (pba->has_gdm == _TRUE_) {
+
+        ppv->y[ppv->index_pt_delta_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_delta_gdm];
+
+        ppv->y[ppv->index_pt_theta_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_theta_gdm];
+
+        if (ppt->dynamic_shear_gdm == _TRUE_) {   
+          ppv->y[ppv->index_pt_shear_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_shear_gdm];  
+        }
+
+      if (ppt->dynamic_pinad_gdm == _TRUE_) {   
+          ppv->y[ppv->index_pt_pinad_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_pinad_gdm];  
+        }        
+
+      }
+      /* END GDM_CLASS */
 
       if (pba->has_idm_dr == _TRUE_) {
 
@@ -5081,11 +5133,13 @@ int perturb_initial_conditions(struct precision * ppr,
   double a,a_prime_over_a;
   double w_fld,dw_over_da_fld,integral_fld;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l3_ur=0.,eta=0.,delta_cdm=0.,alpha, alpha_prime;
+  double delta_gdm=0.,theta_gdm=0.,w=0,cs2=0.,ca2=0.,cv2=0.; // GDM_CLASS 
   double delta_dr=0;
   double q,epsilon,k2;
   int index_q,n_ncdm,idx;
   double rho_r,rho_m,rho_nu,rho_m_over_rho_r;
   double fracnu,fracg,fracb,fraccdm,om;
+  double fracgdm,omk,RnuTerm,RnuAltTerm,omtau,csTerm1,csTerm4; // GDM_CLASS
   double ktau_two,ktau_three;
   double f_dr;
 
@@ -5125,6 +5179,14 @@ int perturb_initial_conditions(struct precision * ppr,
 
     if (pba->has_cdm == _TRUE_) {
       rho_m += ppw->pvecback[pba->index_bg_rho_cdm];
+    }
+
+    /* GDM_CLASS
+    /* this has impliciations for how the Einstein equations are written using the
+       radiatio/matter ratio rho_m_over_rho_r. The fld is supposed to be close to 
+       cdm regarding the background: |w| << 1 */
+    if (pba->has_gdm == _TRUE_) {
+      rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
     }
 
     if (pba->has_idm_dr == _TRUE_) {
@@ -5173,6 +5235,31 @@ int perturb_initial_conditions(struct precision * ppr,
     /* f_cdm = Omega_cdm(t_i) / Omega_m(t_i) */
     fraccdm = 1.-fracb;
 
+    /* GDM_CLASS */
+    /* initial conditions need to be modified in case of initially time varying w.
+       Here we assume that w_ini=const and ca2_ini=w_ini.
+       Although w,ca2,cs2,cv2 are now in principle scale and time-dependent, the
+       initial conditions still require all of them to be time-independent. Check this 
+       only via w==ca2. It is allowed that both cs2 and cv2 depend on scale (no 
+       modifications if IC required). */
+    fracgdm = 0;
+    if (pba->has_gdm == _TRUE_) {
+      fracgdm = ppw->pvecback[pba->index_bg_rho_gdm]/rho_m;
+      w = ppw->pvecback[pba->index_bg_w_gdm];
+      ca2 = ppw->pvecback[pba->index_bg_ca2_gdm];
+      class_test(w != ca2,
+                 ppt->error_message,
+                 "Stop because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
+      cs2 = cs2_gdm_of_a_and_k(pba,a,k);
+      cv2 = cv2_gdm_of_a_and_k(pba,a,k);
+    }  
+    /* some other shortcut notation */
+    csTerm4 = 4. + 3.*cs2 - 6.*w;
+    csTerm1 = 1. + 2.*cs2 - 3.*w;
+    RnuTerm = 15. + 4.*fracnu;
+    RnuAltTerm = 5. + 4.*fracnu;
+    /* END GDM_CLASS */
+
     /* Omega_m(t_i) / Omega_r(t_i) */
     rho_m_over_rho_r = rho_m/rho_r;
 
@@ -5186,6 +5273,8 @@ int perturb_initial_conditions(struct precision * ppr,
        a = [H(t_0)^2 Omega_m(t_0) a(t_0)^3 / 4] x [tau^2 + 4 tau / omega]
     */
     om = a*rho_m/sqrt(rho_r);
+    omtau = om*tau; // GDM_CLASS
+    omk= om/k; // GDM_CLASS
 
     /* (k tau)^2, (k tau)^3 */
     ktau_two=k*k*tau*tau;
@@ -5235,6 +5324,26 @@ int perturb_initial_conditions(struct precision * ppr,
         /* cdm velocity vanishes in the synchronous gauge */
       }
 
+      /* GDM_CLASS
+         Here is C=1, compare 3.7 of 1004.5509, (1.-om*tau/5.) includes a correction 
+         factor in a matter radiation universe. But we can make sure that
+         omega tau << 1 . */
+      if (pba->has_gdm == _TRUE_) {
+        /* initial conditions need to be modified in case of time varying w*/
+        ppw->pv->y[ppw->pv->index_pt_delta_gdm] =  (-(4.-3.*cs2)*(1.+w)/4./csTerm4 +   
+                                                  12.*cv2*(cs2-w)/csTerm4/RnuTerm)*ktau_two* ppr->curvature_ini;  
+        ppw->pv->y[ppw->pv->index_pt_theta_gdm] = -(cs2/4./csTerm4 +
+                                                  4.*cv2*(2.+3.*(cs2-w))/3./
+                                                   (1.+w)/csTerm4/RnuTerm)*ktau_three*k* ppr->curvature_ini ; 
+        if (ppt->dynamic_shear_gdm == _TRUE_) {
+          ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 8./3.*cv2/(1.+w)/RnuTerm*ktau_two*ppr->curvature_ini;  /*from Hu's GDM paper, we only need initial conditions in case the fluid shear is dynamical */
+        }
+        if (ppt->dynamic_pinad_gdm == _TRUE_) {
+          ppw->pv->y[ppw->pv->index_pt_pinad_gdm] = (cs2-w)*(ppw->pv->y[ppw->pv->index_pt_delta_gdm] + 3.0/ktau*(1.+w)* ppw->pv->y[ppw->pv->index_pt_theta_gdm]/k);  /*a random invention, we need initial conditions, so far only adiabatic */
+        }
+      }
+      /* END GDM_CLASS
+
       /* interacting dark matter */
       if (pba->has_idm_dr == _TRUE_) {
         ppw->pv->y[ppw->pv->index_pt_delta_idm_dr] = 3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g]; /* idm_dr density */
@@ -5282,14 +5391,19 @@ int perturb_initial_conditions(struct precision * ppr,
 
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_) || (pba->has_idr == _TRUE_)) {
 
+        /* GDM_CLASS: TO BE CHECKED: removed the omega*tau terms and l3_ur ? */
+
         delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* density of ultra-relativistic neutrinos/relics */
 
         /* velocity of ultra-relativistic neutrinos/relics */ //TBC
-        theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared;
+        // theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; // GDM_CLASS
+        theta_ur = -(23.+4*fracnu)/36./RnuTerm*ktau_three*k * ppr->curvature_ini ; // GDM_CLASS
 
-        shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
+        // shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0 // GDM_CLASS
+        shear_ur = 2./3./RnuTerm*ktau_two * ppr->curvature_ini; // GDM_CLASS
 
-        l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
+        // l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC // GDM_CLASS
+        l3_ur = 0.;
 
         if (pba->has_dr == _TRUE_) delta_dr = delta_ur;
       }
@@ -5297,7 +5411,9 @@ int perturb_initial_conditions(struct precision * ppr,
       /* synchronous metric perturbation eta */
       //eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)) /  s2_squared;
       //eta = ppr->curvature_ini * s2_squared * (1.-ktau_two/12./(15.+4.*fracnu)*(15.*s2_squared-10.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
-      eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
+      // eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)); // GDM_CLASS
+      eta = ppr->curvature_ini * (1.0 - (5.+4.*fracnu)/(12.*RnuTerm)*ktau_two); // GDM_CLASS
+
 
     }
 
@@ -5330,11 +5446,26 @@ int perturb_initial_conditions(struct precision * ppr,
 
       ppw->pv->y[ppw->pv->index_pt_delta_cdm] = ppr->entropy_ini+3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g];
 
+      /* GDM_CLASS */
+      if (pba->has_gdm == _TRUE_) {
+        /* initial conditions need to be modified in case of time varying w*/
+        ppw->pv->y[ppw->pv->index_pt_delta_gdm] =  -(1.-cs2)*(1.+w)/2./csTerm1*omk*fraccdm*ktau* ppr->entropy_ini; 
+        ppw->pv->y[ppw->pv->index_pt_theta_gdm] = -cs2/6./csTerm1*omk*fraccdm*ktau_two*k* ppr->entropy_ini ; 
+        if (ppt->dynamic_shear_gdm == _TRUE_) {
+          ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 0. ;
+        }
+        if (ppt->dynamic_pinad_gdm == _TRUE_) {
+          ppw->pv->y[ppw->pv->index_pt_pinad_gdm] = (cs2-w)*(ppw->pv->y[ppw->pv->index_pt_delta_gdm] + 3.0/ktau*(1.+w)* ppw->pv->y[ppw->pv->index_pt_theta_gdm]/k);  /*a random invention, we need initial conditions, so far only adiabatic */
+        }
+      }
+      /* END GDM_CLASS */
+
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_)) {
 
         delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g];
         theta_ur = ppw->pv->y[ppw->pv->index_pt_theta_g];
-        shear_ur = -ppr->entropy_ini*fraccdm*ktau_two*tau*om/6./(2.*fracnu+15.);
+        // shear_ur = -ppr->entropy_ini*fraccdm*ktau_two*tau*om/6./(2.*fracnu+15.); // GDM_CLASS TO BE CHECKED
+        shear_ur = 0.; // GDM_CLASS: TO BE CHECKED: up tp x^2
 
       }
 
@@ -6643,6 +6774,42 @@ int perturb_total_stress_energy(
         rho_plus_p_m += ppw->pvecback[pba->index_bg_rho_cdm];
       }
     }
+
+    /* GDM_CLASS: gdm contribution */
+    if (pba->has_gdm == _TRUE_) {
+      double w = ppw->pvecback[pba->index_bg_w_gdm];
+      double ca2 = ppw->pvecback[pba->index_bg_ca2_gdm];
+      double cs2 = cs2_gdm_of_a_and_k(pba,a,k);
+      ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
+      ppw->rho_plus_p_theta += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
+      if (ppt->dynamic_pinad_gdm == _FALSE_) {
+        ppw->delta_p += (
+            cs2 * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
+            + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w)*(cs2 - ca2)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];)
+      }
+      else {
+        ppw->delta_p += (
+            ca2 * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
+            + ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_pinad_gdm];)
+      }
+      if(ppt->dynamic_shear_gdm == _TRUE_) {
+          double shear_gdm = y[ppw->pv->index_pt_shear_gdm];
+          ppw->rho_plus_p_shear += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
+      }
+      // TO BE CHECKED
+      ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_gdm];
+      if (ppt->has_source_delta_m == _TRUE_) {
+        delta_rho_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm]; // contribution to delta rho_matter
+        rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
+      }
+      if ((ppt->has_source_delta_m == _TRUE_) || (ppt->has_source_theta_m == _TRUE_)) {
+        if (ppt->gauge == newtonian)
+          rho_plus_p_theta_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
+        rho_plus_p_m += ppw->pvecback[pba->index_bg_rho_gdm];
+      }      
+      // END TO BE CHECKED
+    }
+    /* END GDM_CLASS */
 
     /* idm_dr contribution */
     if (pba->has_idm_dr == _TRUE_) {
