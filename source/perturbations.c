@@ -6789,8 +6789,8 @@ int perturb_total_stress_energy(
       }
       if ((ppt->has_source_delta_m == _TRUE_) || (ppt->has_source_theta_m == _TRUE_)) {
         if (ppt->gauge == newtonian)
-          rho_plus_p_theta_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
-        rho_plus_p_m += ppw->pvecback[pba->index_bg_rho_gdm];
+          rho_plus_p_theta_m += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
+        rho_plus_p_m += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm];
       }      
       // END TO BE CHECKED
     }
