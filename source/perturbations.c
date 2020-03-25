@@ -510,7 +510,10 @@ int perturb_init(
       printf("Computing sources\n");
   }
 
-  /* GDM_CLASS: TO BE CHECKED: test removed because not true ?
+  /* GDM_CLASS: test removed because not exactly true; cf. page 10 of the theory paper
+                1605.00649 : "We adopt the synchronous gauge by setting Psi=Xi=0. This 
+                gauge has a residual gauge mode which is set to zero by discarding 
+                decaying initial conditions."
   class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_),
              ppt->error_message,
              "In the synchronous gauge, it is not self-consistent to assume no CDM: the later is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or switch to newtonian gauge");
@@ -2518,7 +2521,6 @@ int perturb_workspace_init(
     if ((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)) {
       class_define_index(ppw->index_mt_shear_gdm,_TRUE_,index_mt,1); 
     }
-    // TO BE CHECKED: add same for dynamic_pinad ? 
 
     /* newtonian gauge */
 
@@ -3746,9 +3748,6 @@ int perturb_vector_init(
     if (ppt->dynamic_shear_gdm == _TRUE_) {
        class_define_index(ppv->index_pt_shear_gdm,pba->has_gdm,index_pt,1); /* dynamic gdm shear */
     }
-    if (ppt->dynamic_pinad_gdm == _TRUE_) {
-       class_define_index(ppv->index_pt_pinad_gdm,pba->has_gdm,index_pt,1); /* dynamic gdm \Pi_{nad} */
-    }
 
     /* idm_dr */
     class_define_index(ppv->index_pt_delta_idm_dr,pba->has_idm_dr,index_pt,1); /* idm_dr density */
@@ -4218,11 +4217,6 @@ int perturb_vector_init(
           ppv->y[ppv->index_pt_shear_gdm] =
           ppw->pv->y[ppw->pv->index_pt_shear_gdm];  
         }
-
-      if (ppt->dynamic_pinad_gdm == _TRUE_) {   
-          ppv->y[ppv->index_pt_pinad_gdm] =
-          ppw->pv->y[ppw->pv->index_pt_pinad_gdm];  
-        }        
 
       }
       /* END GDM_CLASS */
@@ -5338,9 +5332,6 @@ int perturb_initial_conditions(struct precision * ppr,
         if (ppt->dynamic_shear_gdm == _TRUE_) {
           ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 8./3.*cv2/(1.+w)/RnuTerm*ktau_two*ppr->curvature_ini;  /*from Hu's GDM paper, we only need initial conditions in case the fluid shear is dynamical */
         }
-        if (ppt->dynamic_pinad_gdm == _TRUE_) {
-          ppw->pv->y[ppw->pv->index_pt_pinad_gdm] = (cs2-w)*(ppw->pv->y[ppw->pv->index_pt_delta_gdm] + 3.0/ktau*(1.+w)* ppw->pv->y[ppw->pv->index_pt_theta_gdm]/k);  /*a random invention, we need initial conditions, so far only adiabatic */
-        }
       }
       /* END GDM_CLASS
 
@@ -5391,7 +5382,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_) || (pba->has_idr == _TRUE_)) {
 
-        /* GDM_CLASS: TO BE CHECKED: removed the omega*tau terms and l3_ur ? */
+        /* GDM_CLASS: removed the omega*tau terms and l3_ur */
 
         delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* density of ultra-relativistic neutrinos/relics */
 
@@ -6767,21 +6758,13 @@ int perturb_total_stress_energy(
       double cs2 = cs2_gdm_of_a_and_k(pba,a,k);
       ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
       ppw->rho_plus_p_theta += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
-      if (ppt->dynamic_pinad_gdm == _FALSE_) {
-        ppw->delta_p += (
+      ppw->delta_p += (
             cs2 * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
             + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w)*(cs2 - ca2)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];)
-      }
-      else {
-        ppw->delta_p += (
-            ca2 * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
-            + ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_pinad_gdm];)
-      }
       if(ppt->dynamic_shear_gdm == _TRUE_) {
           double shear_gdm = y[ppw->pv->index_pt_shear_gdm];
           ppw->rho_plus_p_shear += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
       }
-      // TO BE CHECKED
       ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_gdm];
       if (ppt->has_source_delta_m == _TRUE_) {
         delta_rho_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm]; // contribution to delta rho_matter
@@ -6792,7 +6775,6 @@ int perturb_total_stress_energy(
           rho_plus_p_theta_m += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
         rho_plus_p_m += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm];
       }      
-      // END TO BE CHECKED
     }
     /* END GDM_CLASS */
 

@@ -834,27 +834,7 @@ int input_read_parameters(
     if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
       ppt->dynamic_shear_gdm = _TRUE_;
     }
-  
-    /* Flag for algebraic shear and dynamic non-adiabatic pressure */
-    class_call(parser_read_string(pfc,
-                                  "dynamic_pinad_gdm",
-                                  &(string1),
-                                  &(flag1),
-                                  errmsg),
-               errmsg,
-               errmsg);
-    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
-      ppt->dynamic_pinad_gdm = _TRUE_;
-    }
-  
-    /* Sanity checks */
-    class_test((ppt->dynamic_shear_gdm == _TRUE_) && (ppt->dynamic_pinad_gdm == _TRUE_),
-               errmsg,
-               "You cannot have both dynamic_shear_gdm and dynamic_pinad_gdm set to 'yes', choose only one.");
-    class_test((ppt->dynamic_shear_gdm == _FALSE_) && (ppt->dynamic_pinad_gdm == _FALSE_),
-               errmsg,
-               "You cannot have both dynamic_shear_gdm and dynamic_pinad_gdm set to 'no', choose at least one.");
-  
+
     /* Binned time-dependent-only GDM */
     if (pba->type_gdm==time_only_bins_gdm){
       
@@ -3478,7 +3458,6 @@ int input_default_params(
 
   /* GDM_CLASS: default values of new GDM variables */ 
   ppt->dynamic_shear_gdm = _TRUE_;
-  ppt->dynamic_pinad_gdm = _FALSE_;
   /* END GDM_CLASS */
 
   ppt->has_cl_cmb_temperature = _FALSE_;
