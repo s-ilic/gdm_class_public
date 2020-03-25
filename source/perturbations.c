@@ -5446,26 +5446,11 @@ int perturb_initial_conditions(struct precision * ppr,
 
       ppw->pv->y[ppw->pv->index_pt_delta_cdm] = ppr->entropy_ini+3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g];
 
-      /* GDM_CLASS */
-      if (pba->has_gdm == _TRUE_) {
-        /* initial conditions need to be modified in case of time varying w*/
-        ppw->pv->y[ppw->pv->index_pt_delta_gdm] =  -(1.-cs2)*(1.+w)/2./csTerm1*omk*fraccdm*ktau* ppr->entropy_ini; 
-        ppw->pv->y[ppw->pv->index_pt_theta_gdm] = -cs2/6./csTerm1*omk*fraccdm*ktau_two*k* ppr->entropy_ini ; 
-        if (ppt->dynamic_shear_gdm == _TRUE_) {
-          ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 0. ;
-        }
-        if (ppt->dynamic_pinad_gdm == _TRUE_) {
-          ppw->pv->y[ppw->pv->index_pt_pinad_gdm] = (cs2-w)*(ppw->pv->y[ppw->pv->index_pt_delta_gdm] + 3.0/ktau*(1.+w)* ppw->pv->y[ppw->pv->index_pt_theta_gdm]/k);  /*a random invention, we need initial conditions, so far only adiabatic */
-        }
-      }
-      /* END GDM_CLASS */
-
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_)) {
 
         delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g];
         theta_ur = ppw->pv->y[ppw->pv->index_pt_theta_g];
-        // shear_ur = -ppr->entropy_ini*fraccdm*ktau_two*tau*om/6./(2.*fracnu+15.); // GDM_CLASS TO BE CHECKED
-        shear_ur = 0.; // GDM_CLASS: TO BE CHECKED: up tp x^2
+        shear_ur = -ppr->entropy_ini*fraccdm*ktau_two*tau*om/6./(2.*fracnu+15.);
 
       }
 
