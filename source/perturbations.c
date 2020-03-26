@@ -6583,18 +6583,43 @@ int perturb_einstein(
        gauge-independent variables (you could comment this out if you
        really want gauge-dependent results) */
 
-    // GDM_CLASS: TO BE CHECK
     if (ppt->has_source_delta_m == _TRUE_) {
-      ppw->delta_m += 3. *ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H] * ppw->theta_m/k2;
-      // note: until 2.4.3 there was a typo, the factor was (-2 H'/H) instead
-      // of (3 aH). There is the same typo in the CLASSgal paper
-      // 1307.1459v1,v2,v3. It came from a confusion between (1+w_total)
-      // and (1+w_matter)=1 [the latter is the relevant one here].
-      //
-      // note2: at this point this gauge-invariant variable is only
-      // valid if all matter components are pressureless and
-      // stable. This relation will be generalized soon to the case
-      // of decaying dark matter.
+      /* GDM_CLASS: additional (1 + w_matter) factor required */
+      if (pba->has_gdm == _TRUE_) {
+        double rho_m = ppw->pvecback[pba->index_bg_rho_b];
+        double P_m = 0.;
+        int n_ncdm;
+        if (pba->has_cdm == _TRUE_) {
+          rho_m += ppw->pvecback[pba->index_bg_rho_cdm];
+        }
+        if (pba->has_gdm == _TRUE_) {
+          rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
+          P_m += w*ppw->pvecback[pba->index_bg_rho_gdm];
+        }
+        if (pba->has_dcdm == _TRUE_) {
+          rho_m += ppw->pvecback[pba->index_bg_rho_dcdm];
+        }
+        if (pba->has_ncdm == _TRUE_) {
+          for (n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++) {
+            rho_m += ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm];
+            P_m += ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm];
+          }
+        }
+        ppw->delta_m += 3. * (1. + P_m/rho_m) * ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H] * ppw->theta_m/k2;
+      }
+      /* END GDM_CLASS */
+      else {
+        ppw->delta_m += 3. *ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H] * ppw->theta_m/k2;
+        // note: until 2.4.3 there was a typo, the factor was (-2 H'/H) instead
+        // of (3 aH). There is the same typo in the CLASSgal paper
+        // 1307.1459v1,v2,v3. It came from a confusion between (1+w_total)
+        // and (1+w_matter)=1 [the latter is the relevant one here].
+        //
+        // note2: at this point this gauge-invariant variable is only
+        // valid if all matter components are pressureless and
+        // stable. This relation will be generalized soon to the case
+        // of decaying dark matter.
+      }
     }
 
     if (ppt->has_source_delta_cb == _TRUE_) {
@@ -10332,7 +10357,7 @@ int perturb_rsa_idr_delta_and_theta(
 ///////////////////////////////////////////////////
 /* GDM_CLASS : new set of GDM-specific functions */
 ///////////////////////////////////////////////////
-/** Here come the functions cs2_fld_of_a_and_k and cv2_fld_of_a_and_k that 
+/** Here come the functions cs2_gdm_of_a_and_k and cv2_gdm_of_a_and_k that 
     calculate the sound speed and viscosity for different GDM parametrisations.
     And some additional functions needed. See the comments in GDM_explanatory.ini for
     how to use those functions from the parameter files.

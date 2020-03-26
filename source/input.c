@@ -880,7 +880,7 @@ int input_read_parameters(
         pba->time_values_gdm[0]=pba->a_today/2.;
         pba->time_values_gdm[1]=pba->a_today;
       }
-  
+
       // User-defined equation of state values in time bins 
       class_call(parser_read_list_of_doubles(pfc,
                                              "w_values_gdm",
