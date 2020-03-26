@@ -6422,6 +6422,7 @@ int perturb_einstein(
   double s2_squared;
   double shear_g = 0.;
   double shear_idr = 0.;
+  double shear_gdm=0., w_gdm=0., cv2_gdm=0.; // GDM_CLASS
 
   /** - define wavenumber and scale factor related quantities */
 
@@ -6440,10 +6441,32 @@ int perturb_einstein(
 
   if (_scalars_) {
 
+    /* GDM_CLASS */
+    if (pba->has_gdm == _TRUE_) {
+      w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
+      cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
+    }
+
     /** - --> infer metric perturbations from Einstein equations */
 
     /* newtonian gauge */
     if (ppt->gauge == newtonian) {
+
+      /* GDM_CLASS:
+         Define the algebraic shear patterned after the dynamic shear, constant w. 
+         Newtonian gauge needs to numerically agree with the sync version, because it is 
+         gauge inv. Need to produce the gdm contribution to rho_plus_p_shear here because 
+         because we don't want to call from perturb_total_stress_energy 
+         perturbed_einstein, because perturbed_einstein calls 
+         perturbed_total_stress_energy in order to calculate mt quantities in 
+         perturbed_einstein. We treat the dynamical shear in perturb_total_stress_energy
+      */
+      if ((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)) {
+        ppw->pvecmetric[ppw->index_mt_shear_gdm] = 8.* cv2_gdm /(15.*(1.+w_gdm)*a_prime_over_a)*y[ppw->pv->index_pt_theta_gdm];
+        shear_gdm = ppw->pvecmetric[ppw->index_mt_shear_gdm];
+        ppw->rho_plus_p_shear += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
+      }
+
 
       /* in principle we could get phi from the constrain equation:
 
@@ -6522,6 +6545,15 @@ int perturb_einstein(
       /* alpha = (h'+6eta')/2k^2 */
       ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
+      /* GDM_CLASS: define the algebraic shear, patterned after the dynamic shear, for 
+        constant w. We need to add the gdm contribution of rho_plus_p_shear here because 
+        we don't want to call perturbed_einstein from  perturb_total_stress_energy */
+      if((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)){
+        ppw->pvecmetric[ppw->index_mt_shear_gdm] = 8.* cv2_gdm /(15.*(1.+w_gdm)*a_prime_over_a)*(y[ppw->pv->index_pt_theta_gdm] +  ppw->pvecmetric[ppw->index_mt_alpha]*k2);
+        shear_gdm = ppw->pvecmetric[ppw->index_mt_shear_gdm];
+        ppw->rho_plus_p_shear += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
+      }
+
       /* eventually, infer first-order tight-coupling approximation for photon
          shear, then correct the total shear */
       if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
@@ -6551,6 +6583,7 @@ int perturb_einstein(
        gauge-independent variables (you could comment this out if you
        really want gauge-dependent results) */
 
+    // GDM_CLASS: TO BE CHECK
     if (ppt->has_source_delta_m == _TRUE_) {
       ppw->delta_m += 3. *ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H] * ppw->theta_m/k2;
       // note: until 2.4.3 there was a typo, the factor was (-2 H'/H) instead
@@ -6619,6 +6652,8 @@ int perturb_einstein(
 
 }
 
+/* GDM_CLASS: need to be careful if perturb_total_stress_energy is called in other 
+   functions than perturbed_einstein: algeb. fluid shear is missing */
 int perturb_total_stress_energy(
                                 struct precision * ppr,
                                 struct background * pba,
@@ -6828,33 +6863,6 @@ int perturb_total_stress_energy(
       }
     }
 
-    /* GDM_CLASS: gdm contribution */
-    if (pba->has_gdm == _TRUE_) {
-      double w = ppw->pvecback[pba->index_bg_w_gdm];
-      double ca2 = ppw->pvecback[pba->index_bg_ca2_gdm];
-      double cs2 = cs2_gdm_of_a_and_k(pba,a,k);
-      ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
-      ppw->rho_plus_p_theta += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
-      ppw->delta_p += (
-            cs2 * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
-            + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w)*(cs2 - ca2)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];)
-      if(ppt->dynamic_shear_gdm == _TRUE_) {
-          double shear_gdm = y[ppw->pv->index_pt_shear_gdm];
-          ppw->rho_plus_p_shear += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
-      }
-      ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_gdm];
-      if (ppt->has_source_delta_m == _TRUE_) {
-        delta_rho_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm]; // contribution to delta rho_matter
-        rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
-      }
-      if ((ppt->has_source_delta_m == _TRUE_) || (ppt->has_source_theta_m == _TRUE_)) {
-        if (ppt->gauge == newtonian)
-          rho_plus_p_theta_m += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
-        rho_plus_p_m += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm];
-      }      
-    }
-    /* END GDM_CLASS */
-
     /* idm_dr contribution */
     if (pba->has_idm_dr == _TRUE_) {
       ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_idm_dr]*y[ppw->pv->index_pt_delta_idm_dr];
@@ -7056,6 +7064,33 @@ int perturb_total_stress_energy(
     }
 
     /* add your extra species here */
+
+    /* GDM_CLASS: gdm contribution */
+    if (pba->has_gdm == _TRUE_) {
+      double w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
+      double ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
+      double cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
+      ppw->rho_plus_p_theta += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
+      ppw->delta_p += (
+            cs2_gdm * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
+            + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w_gdm)*(cs2_gdm - ca2_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];)
+      if(ppt->dynamic_shear_gdm == _TRUE_) {
+          double shear_gdm = y[ppw->pv->index_pt_shear_gdm];
+          ppw->rho_plus_p_shear += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
+      }
+      ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_gdm];
+      if (ppt->has_source_delta_m == _TRUE_) {
+        delta_rho_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm]; // contribution to delta rho_matter
+        rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
+      }
+      if ((ppt->has_source_delta_m == _TRUE_) || (ppt->has_source_theta_m == _TRUE_)) {
+        if (ppt->gauge == newtonian)
+          rho_plus_p_theta_m += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
+        rho_plus_p_m += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm];
+      }      
+    }
+    /* END GDM_CLASS */
 
     /* fluid contribution */
     if (pba->has_fld == _TRUE_) {
@@ -7650,6 +7685,12 @@ int perturb_sources(
         + 3.*a_prime_over_a*theta_over_k2; // N-body gauge correction
     }
 
+    /* GDM_CLASS: delta_gdm */
+    if (ppt->has_source_delta_gdm == _TRUE_) {
+      _set_source_(ppt->index_tp_delta_gdm) = y[ppw->pv->index_pt_delta_gdm]
+        + 3.*a_prime_over_a*theta_over_k2; // N-body gauge correction
+    }
+
     /* delta_dcdm */
     if (ppt->has_source_delta_dcdm == _TRUE_) {
       _set_source_(ppt->index_tp_delta_dcdm) = y[ppw->pv->index_pt_delta_dcdm]
@@ -7763,6 +7804,12 @@ int perturb_sources(
     /* theta_cdm */
     if (ppt->has_source_theta_cdm == _TRUE_) {
       _set_source_(ppt->index_tp_theta_cdm) = y[ppw->pv->index_pt_theta_cdm]
+        + theta_shift; // N-body gauge correction
+    }
+
+    /* GDM_CLASS: theta_gdm */
+    if (ppt->has_source_theta_gdm == _TRUE_) {
+      _set_source_(ppt->index_tp_theta_gdm) = y[ppw->pv->index_pt_theta_gdm]
         + theta_shift; // N-body gauge correction
     }
 
@@ -7945,6 +7992,13 @@ int perturb_print_variables(double tau,
   /** - ncdm sector ends */
   double phi=0.,psi=0.,alpha=0.;
   double delta_temp=0., delta_chi=0.;
+  /* GDM_CLASS */
+  double delta_gdm=0.,theta_gdm=0.,shear_gdm=0.,pinad_gdm=0.;
+  double w_gdm=0.,cs2_gdm=0.,ca2_gdm=0.;
+  double temperC=0, ISW1C=0, ISW2C=0, dopplC=0, doppldotC=0;
+  double a_prime_over_a=0.,a_prime_over_a_prime=0.;
+  /* END GDM_CLASS */
+
 
   double a,a2,H;
   int idx,index_q, storeidx;
@@ -8004,6 +8058,10 @@ int perturb_print_variables(double tau,
   a = pvecback[pba->index_bg_a];
   a2 = a*a;
   H = pvecback[pba->index_bg_H];
+  /* GDM_CLASS: needed quantities */
+  a_prime_over_a = pvecback[pba->index_bg_a] * pvecback[pba->index_bg_H]; /* (a'/a)=aH */
+  a_prime_over_a_prime = pvecback[pba->index_bg_H_prime] * pvecback[pba->index_bg_a] + pow(pvecback[pba->index_bg_H] * pvecback[pba->index_bg_a],2); /* (a'/a)' = aH'+(aH)^2 */
+  /* END GDM_CLASS */
 
   if (pba->has_ncdm == _TRUE_){
     class_alloc(delta_ncdm, sizeof(double)*pba->N_ncdm,error_message);
@@ -8128,6 +8186,48 @@ int perturb_print_variables(double tau,
       psi = 0.0;
       phi = 0.0;
     }
+
+    /* GDM_CLASS */
+    /* New sources */
+     if (ppt->gauge == synchronous) {
+      temperC = delta_g/4. + pvecmetric[ppw->index_mt_alpha_prime];
+      ISW1C = y[ppw->pv->index_pt_eta] - pvecmetric[ppw->index_mt_alpha_prime] - 2.*a_prime_over_a*alpha ;
+      ISW2C = pvecmetric[ppw->index_mt_eta_prime] - a_prime_over_a_prime*alpha - a_prime_over_a*pvecmetric[ppw->index_mt_alpha_prime];
+      dopplC = dy[ppw->pv->index_pt_theta_b]/k/k+ pvecmetric[ppw->index_mt_alpha_prime];
+      doppldotC = y[ppw->pv->index_pt_theta_b]/k/k + alpha;
+    }
+    /* Newtonian sources to be filled in*/
+    else if (ppt->gauge == newtonian){
+      temperC = 0.;
+      ISW1C = 0.;
+      ISW2C= pvecmetric[ppw->index_mt_phi_prime] ;
+      dopplC=0.;
+      doppldotC=0.;
+    }
+    else{
+      temperC = 0.;
+      ISW1C = 0.;
+      ISW2C=0.;
+      dopplC=0.;
+      doppldotC=0.;
+    }
+    /* added gdm fluid */
+    if (pba->has_gdm == _TRUE_) {
+      w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
+      ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
+      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      delta_gdm = y[ppw->pv->index_pt_delta_gdm];
+      theta_gdm = y[ppw->pv->index_pt_theta_gdm];
+      if (ppt->dynamic_shear_gdm == _TRUE_) {
+        shear_gdm = y[ppw->pv->index_pt_shear_gdm];
+      }
+      else {
+        shear_gdm = ppw->pvecmetric[ppw->index_mt_shear_gdm];
+      }
+      pinad_gdm = (cs2_gdm - ca2_gdm)*(delta_gdm + theta_gdm/k/k*3.0*pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H]*(1.+ w_gdm)) ;
+      }
+    }
+    /* END GDM_CLASS */
 
     if (pba->has_ncdm == _TRUE_) {
       /** - --> Get delta, deltaP/rho, theta, shear and store in array */
@@ -8256,6 +8356,12 @@ int perturb_print_variables(double tau,
         theta_cdm += k*k*alpha;
       }
 
+       /* GDM_CLASS: added gdm*/
+      if (pba->has_gdm == _TRUE_) {
+        delta_gdm -= 3*(1.+w_gdm)*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+        theta_gdm += k*k*alpha;
+      }
+
       if (pba->has_idm_dr == _TRUE_) {
         delta_idm_dr -= 3. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
         theta_idm_dr += k*k*alpha;
@@ -8327,6 +8433,19 @@ int perturb_print_variables(double tau,
     /* Cold dark matter */
     class_store_double(dataptr, delta_cdm, pba->has_cdm, storeidx);
     class_store_double(dataptr, theta_cdm, pba->has_cdm, storeidx);
+    /* GDM_CLASS */
+    /* New fluid variables */
+    class_store_double(dataptr, delta_gdm, pba->has_gdm, storeidx);
+    class_store_double(dataptr, theta_gdm, pba->has_gdm, storeidx);
+    class_store_double(dataptr, shear_gdm, pba->has_gdm, storeidx);
+    class_store_double(dataptr, pinad_gdm, pba->has_gdm, storeidx);
+    /* New sources */
+    class_store_double(dataptr, temperC, _TRUE_, storeidx);
+    class_store_double(dataptr, ISW1C, _TRUE_, storeidx);
+    class_store_double(dataptr, ISW2C, _TRUE_, storeidx);
+    class_store_double(dataptr, dopplC, _TRUE_, storeidx);
+    class_store_double(dataptr, doppldotC, _TRUE_, storeidx);
+    /* END GDM_CLASS */
     /* Non-cold Dark Matter */
     if ((pba->has_ncdm == _TRUE_) && ((ppt->has_density_transfers == _TRUE_) || (ppt->has_velocity_transfers == _TRUE_) || (ppt->has_source_delta_m == _TRUE_))) {
       for(n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++){
@@ -8572,6 +8691,11 @@ int perturb_derivs(double tau,
   double f_dr, fprime_dr;
 
   double Sinv=0., dmu_idm_dr=0., dmu_idr=0., tca_slip_idm_dr=0.;
+
+  /* GDM_CLASS */
+  double shear_gdm=0.,pinad_gdm=0.;
+  double w_gdm,ca2_gdm,cs2_gdm,cv2_gdm;
+  /* END GDM_CLASS */
 
   /** - rename the fields of the input structure (just to avoid heavy notations) */
 
@@ -9015,6 +9139,49 @@ int perturb_derivs(double tau,
         k*(s_l[l]*y[pv->index_pt_F0_dr+l-1]-(1.+l)*cotKgen*y[pv->index_pt_F0_dr+l]);
 
     }
+
+    /** -> GDM_CLASS: generalized dark matter (gdm) */
+
+    if (pba->has_gdm == _TRUE_) {
+
+      /** ---> factors w, adiabatic sound speed ca2 (all background-related),
+          plus actual sound speed in the fluid rest frame cs2 and cv2*/
+      w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
+      ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
+      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
+
+      /** ---> specify whether \Pi_{nad} is algebraic or dynamic*/
+      pinad_gdm = (cs2_gdm-ca2_gdm)*( y[pv->index_pt_delta_gdm] + 3*a_prime_over_a*(1.+w_gdm)*y[pv->index_pt_theta_gdm]/k2);
+
+      /** ---> fluid density (rewritten in terms of \Pi_{nad}) */
+       dy[pv->index_pt_delta_gdm] =
+        -(1.+w_gdm)*(y[pv->index_pt_theta_gdm]+metric_continuity)
+        +3.*a_prime_over_a*((w_gdm-ca2_gdm)*y[pv->index_pt_delta_gdm] - pinad_gdm) ;
+
+      /** ---> fluid velocity (added here the shear_gdm) */
+      if (ppt->dynamic_shear_gdm == _TRUE_) {
+        shear_gdm = y[pv->index_pt_shear_gdm];
+      }
+      else {
+        shear_gdm = ppw->pvecmetric[ppw->index_mt_shear_gdm];
+      } 
+
+      dy[pv->index_pt_theta_gdm] = // fluid velocity (rewritten in terms of \Pi_{nad})
+        -(1.-3.*ca2_gdm)*a_prime_over_a*y[pv->index_pt_theta_gdm]
+        +k2/(1.+w_gdm)*(ca2_gdm*y[pv->index_pt_delta_gdm]+pinad_gdm)
+        +metric_euler - s2_squared*k2*shear_gdm;
+
+      /** ---> fluid shear */
+      if (ppt->dynamic_shear_gdm == _TRUE_) {
+        dy[pv->index_pt_shear_gdm] = /* fluid shear */
+          -3.*a_prime_over_a*y[pv->index_pt_shear_gdm]
+          +8./3.*cv2_gdm/(1.+w_gdm)*(y[pv->index_pt_theta_gdm] + metric_shear);  
+      }
+
+    }
+
+    /* END GDM_CLASS */
 
     /** - ---> fluid (fld) */
 
@@ -10156,4 +10323,186 @@ int perturb_rsa_idr_delta_and_theta(
 
   return _SUCCESS_;
 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////
+/* GDM_CLASS : new set of GDM-specific functions */
+///////////////////////////////////////////////////
+/** Here come the functions cs2_fld_of_a_and_k and cv2_fld_of_a_and_k that 
+    calculate the sound speed and viscosity for different GDM parametrisations.
+    And some additional functions needed. See the comments in GDM_explanatory.ini for
+    how to use those functions from the parameter files.
+*/   
+
+//  the smooth cs2 and cv2 pixels in has_smooth_pixels_fld
+double c2_piece(double lnap, double lnkp, double c11, double c12, double c21, double c22 ){
+  return (c11 + c12 + c21 + c22 + (-c11 - c12 + c21 + c22)*erf(lnkp) 
+          + erf(lnap)*(-c11 + c12 - c21 + c22 + 
+                (c11 - c12 - c21 + c22)*erf(lnkp)))/4.;
+}
+
+// use this function only for the case pixel_params_fluid. It calculates either cs2 or cv2 for the pixel case.
+double twoD_pixel(struct background *pba, double a , double k, double c_values_fld[_MAX_NUMBER_OF_K_PIXELS_][_MAX_NUMBER_OF_TIME_PIXELS_]) {
+
+      double a_rel = a / pba->a_today;
+      double previous_time=0.;
+      double previous_k=0.;
+      double twoD=0;
+      int i,j;
+
+/*-->The smooth pixel case */
+        if(pba->has_smooth_pixels_fld == _TRUE_){ 
+             double timetable[pba->time_pixel_num_fld];  //stores the stitching times
+             double timeratios[pba->time_pixel_num_fld]; //needed for the transition width awidth
+             double ktable[pba->k_pixel_num_fld];        //stores the stitching scales
+             double kratios[pba->k_pixel_num_fld];       //needed for the transition width kwidth
+             double awidth, kwidth;
+             double lnap, lnkp; // ln((a/ atrans)^awidth), the arguments of the error function
+    
+                //calculate the geometric mean of pixel centers (=algebraic mean for lna)
+                //because w_piece and rho_piece are stitched together at those times.
+             for (i=0; i < pba->time_pixel_num_fld -1; i++) { 
+                 timetable[i]= sqrt(pba->time_values_fld[i]*pba->time_values_fld[i+1]);
+                 timetable[pba->time_pixel_num_fld-2]=pba->time_values_fld[pba->time_pixel_num_fld-1]; //replace the last entry by the final bin end
+                 timeratios[i]=log(timetable[i]/pba->time_values_fld[i]);
+             }
+             for (j=0; j<pba->k_pixel_num_fld-1; j++) {
+                 ktable[j]= sqrt(pba->k_values_fld[j]*pba->k_values_fld[j+1]);
+                 ktable[pba->k_pixel_num_fld-2]=pba->k_values_fld[pba->k_pixel_num_fld-1]; //replace the last entry by the final bin end
+                 kratios[j]=log(ktable[j]/pba->k_values_fld[j]);
+             }  
+                  //determine the transition width using the smallest logarithmic bin width and the external fudge parameter transition_width_time_fld
+             awidth=pba->transition_width_time_fld/min(timeratios,pba->time_pixel_num_fld-1); 
+             kwidth=pba->transition_width_time_fld/min(kratios,pba->k_pixel_num_fld-1); 
+
+                  //stitch pieces together
+             for (j=0; j<pba->k_pixel_num_fld-1; j++) {         //check in which stitching region the scale k is
+               for (i=0; i < pba->time_pixel_num_fld -1; i++) { //check in which stitching region the time a is 
+                  if((previous_k < k) && (k <= ktable[j])){
+                    if( (previous_time < a_rel) && (a_rel <= timetable[i])  ){
+                       lnap= awidth*log(a_rel/pba->time_values_fld[i]);
+                       lnkp= kwidth*log(k/pba->k_values_fld[j]);
+                        // the cx1 is earlier than cx2. And c1x is at smaller k than c2x.
+                       twoD = c2_piece(lnap,lnkp, 
+                                    c_values_fld[j][i], c_values_fld[j][i+1], 
+                                    c_values_fld[j+1][i], c_values_fld[j+1][i+1]) ;
+                       j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
+                       break;                  //this breaks out of the time-loop only (i-loop)
+                    }
+                    else previous_time = timetable[i];
+                   }  
+                   else previous_k = ktable[j];
+                     
+               }
+             }
+             
+        }
+    
+    
+    
+/*-->The sharp pixel case */      
+      else{
+          for (j=0; j<pba->k_pixel_num_fld; j++) {        
+            for (i=0; i < pba->time_pixel_num_fld; i++) { //MBK check in which pixel a and k is
+                if( (previous_k < k) && (k <= pba->k_values_fld[j])  ){                       
+                  if( (previous_time < a_rel) && (a_rel <= pba->time_values_fld[i]) ){         
+                       // printf("k_pixel_num_fld= %i, k_values_fld[j]=%e, k= %e \n", pba->k_pixel_num_fld, pba->k_values_fld[j],k); 
+                        twoD = c_values_fld[j][i];
+                        j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
+                        break;                  //this breaks out of the time-loop only (i-loop)
+                  }
+                  else previous_time = pba->time_values_fld[i];      
+                }
+                else previous_k = pba->k_values_fld[j];
+            }
+          }  
+      }
+
+    return twoD;
+    }
+
+
+//MBK add here the definitions of GDM sound speed and viscosity
+double cs2_fld_of_a_and_k(struct background *pba,
+               double a,
+               double k) {
+  double cs2=0.;
+  if(pba->has_fld == _TRUE_){
+//  double a_rel = a / pba->a_today;
+    
+    /*The constant constant case */
+   if(pba->parametrization_fld == constant_params_fld){
+      cs2 = pba->cs2_fld;
+    }
+
+    /*The warm case */ 
+    if(pba->parametrization_fld == warm_params_fld){
+      double a_rel = a / pba->a_today;
+      double lna = log(a_rel);
+      double n=pba->n0_fld;
+      double cs20=pba->cs2_fld;
+      if(a<=pba->a_wdm_fld){
+       cs2 = pba->cs2_ini_fld;
+       }
+      else cs2 =cs20/exp(lna*n); 
+    }
+
+    /*The axion constant case, m24_axion_fld measured in units of 10^(-24)eV */ // hbar*c = 0.19732697 10^(-6) 3.2408 10^(-23) eV * Mpc = 6.39497*10^-30 eV * Mpc.
+    if(pba->parametrization_fld == axion_params_fld){
+ //     double a_rel = a / pba->a_today;
+      double a_rel = 1.; // MBK just for testing
+      cs2 = pow((k/(2*a_rel*pba->m24_axion_fld * 1.56373839e5)),2.);
+    }
+
+     /*The pixel case */ 
+    if(pba->parametrization_fld == pixel_params_fld){
+      cs2=twoD_pixel(pba, a, k, pba->cs2_values_fld);
+    } 
+  }
+  return  cs2;
+}
+
+
+// cv2_fld_of_a_and_k is for pixel_params_fld is an exact copy of cs2_fld_of_a_and_k. So there should be a nicer way to write down both functions.
+
+double cv2_fld_of_a_and_k(struct background *pba,
+               double a,
+               double k) {
+  double cv2 =0;
+  if(pba->has_fld == _TRUE_){
+//  double a_rel = a / pba->a_today;
+
+    /*The constant constant case */
+    if(pba->parametrization_fld == constant_params_fld){
+      cv2 = pba->cv2_fld;
+    }
+
+    /*The warm case */
+    if(pba->parametrization_fld == warm_params_fld){
+      double a_rel = a / pba->a_today;
+      double lna = log(a_rel);
+      double n=pba->n0_fld;
+      double cv20=pba->cv2_fld;
+      if(a<=pba->a_wdm_fld){
+       cv2 = pba->cv2_ini_fld;
+       }
+      else cv2 =cv20/exp(lna*n); 
+    }
+
+    /*The axion constant case */
+    if(pba->parametrization_fld == axion_params_fld){
+     cv2 = 0.;
+    }
+
+
+     /*The pixel case */ 
+    if(pba->parametrization_fld == pixel_params_fld){
+    cv2=twoD_pixel(pba, a, k, pba->cv2_values_fld);
+    }
+  }
+  return  cv2;
 }
