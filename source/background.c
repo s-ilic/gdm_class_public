@@ -2854,8 +2854,8 @@ double rho_gdm_of_a(struct background *pba,
       double rho_gdm_table[pba->time_bins_num_gdm-1];  // stores the values rho_gdm at the end of each stitching region
       rho_gdm_table[pba->time_bins_num_gdm -2]=1.; // end of last pixel is GDM density today
       double timetable[pba->time_bins_num_gdm]; // stores the stitching times
-      double timeratios[pba->time_bins_num_gdm]; //used to calculate the steepnes of the transition awidth
-      double awidth; //steepnes of the transition
+      double timeratios[pba->time_bins_num_gdm]; //used to calculate the steepness of the transition awidth
+      double awidth; // steepness of the transition
       double lnap; // =ln((a/ atrans)^awidth) is the argument of the error function
       double normtable[pba->time_bins_num_gdm-1]; // needed because becaue rho_piece is not normalized
       int i;
@@ -2926,11 +2926,11 @@ double rho_gdm_of_a(struct background *pba,
 double w_gdm_of_a(struct background *pba,
                   double a) {
 
-  double w=0.;
+  double w = 0.;
 
   /* Time-only binned GDM case */ 
-  if(pba->type_gdm==time_only_bins_gdm){
-    w=oneD_pixel(pba, a ,w_piece);
+  if(pba->type_gdm == time_only_bins_gdm){
+    w = oneD_pixel(pba, a ,w_piece);
   }
 
   return  w;
@@ -2943,11 +2943,11 @@ double w_gdm_of_a(struct background *pba,
 double ca2_gdm_of_a(struct background *pba,
                     double a) {
 
-  double ca2=0.;
+  double ca2 = 0.;
 
   /* Time-only binned GDM case */ 
-  if(pba->type_gdm==time_only_bins_gdm){
-    ca2=oneD_pixel(pba, a ,ca2_piece);
+  if(pba->type_gdm == time_only_bins_gdm){
+    ca2 = oneD_pixel(pba, a ,ca2_piece);
   }
 
   return  ca2;

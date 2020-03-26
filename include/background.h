@@ -14,11 +14,16 @@
 #define _class_print_species_(name,type) \
 printf("-> %-30s Omega = %-15g , omega = %-15g\n",name,pba->Omega0_##type,pba->Omega0_##type*pba->h*pba->h);
 
-/** GDM_CLASS: maximum number of time bins */
+/** GDM_CLASS: */
+
+/* maximum number of time bins */
 #define _MAX_NUMBER_OF_TIME_BINS_ 100
+
+/* available types of GDM models */
 enum type_options_gdm {
     time_only_bins_gdm  /**< GDM parameters binned in scale factor-space */
 };
+
 /* END GDM_CLASS */
 
 /** list of possible types of spatial curvature */
@@ -70,7 +75,7 @@ struct background
   double  cv2_values_gdm[_MAX_NUMBER_OF_TIME_BINS_];  /**< \f$ values of cv2 bins */  
   double  time_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of pixel edges of a-bins */  
   double  time_transition_width_gdm;    /**< \f$ a number of order unity that determines the width of the smooth transition of time bins*/    
-  short   smooth_bins_gdm; /**< \f$ flag (default yes) whether to use smooth bins */
+  short   smooth_bins_gdm; /**< \f$ flag (default no) whether to use smooth bins */
   /* END GDM_CLASS */
 
   double Omega0_cdm; /**< \f$ \Omega_{0 cdm} \f$: cold dark matter */
