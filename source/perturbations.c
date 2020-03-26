@@ -511,8 +511,8 @@ int perturb_init(
   }
 
   /* GDM_CLASS: can be removed because not exactly true; cf. page 10 of the theory paper
-                1605.00649 : "We adopt the synchronous gauge by setting Psi=Xi=0. This 
-                gauge has a residual gauge mode which is set to zero by discarding 
+                1605.00649 : "We adopt the synchronous gauge by setting Psi=Xi=0. This
+                gauge has a residual gauge mode which is set to zero by discarding
                 decaying initial conditions." */
   class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_),
              ppt->error_message,
@@ -2518,7 +2518,7 @@ int perturb_workspace_init(
     /* GDM_CLASS: algebraic fluid shear. Although mt stands for metric, */
     /* this is a natural place for all constrained perturbed quantities */
     if ((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)) {
-      class_define_index(ppw->index_mt_shear_gdm,_TRUE_,index_mt,1); 
+      class_define_index(ppw->index_mt_shear_gdm,_TRUE_,index_mt,1);
     }
 
     /* newtonian gauge */
@@ -5126,7 +5126,7 @@ int perturb_initial_conditions(struct precision * ppr,
   double a,a_prime_over_a;
   double w_fld,dw_over_da_fld,integral_fld;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l3_ur=0.,eta=0.,delta_cdm=0.,alpha, alpha_prime;
-  double delta_gdm=0.,theta_gdm=0.,w_gdm=0,cs2_gdm=0.,ca2_gdm=0.,cv2_gdm=0.; // GDM_CLASS 
+  double delta_gdm=0.,theta_gdm=0.,w_gdm=0,cs2_gdm=0.,ca2_gdm=0.,cv2_gdm=0.; // GDM_CLASS
   double delta_dr=0;
   double q,epsilon,k2;
   int index_q,n_ncdm,idx;
@@ -5176,7 +5176,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
     /* GDM_CLASS
     /* this has implications for how the Einstein equations are written using the
-       radiatio/matter ratio rho_m_over_rho_r. The fld is supposed to be close to 
+       radiatio/matter ratio rho_m_over_rho_r. The fld is supposed to be close to
        cdm regarding the background: |w| << 1 */
     if (pba->has_gdm == _TRUE_) {
       /* This next test ensures that integration starts early enough for the
@@ -5235,8 +5235,8 @@ int perturb_initial_conditions(struct precision * ppr,
     /* initial conditions need to be modified in case of initially time varying w.
        Here we assume that w_ini=const and ca2_ini=w_ini.
        Although w,ca2,cs2,cv2 are now in principle scale and time-dependent, the
-       initial conditions still require all of them to be time-independent. Check this 
-       only via w==ca2. It is allowed that both cs2 and cv2 depend on scale (no 
+       initial conditions still require all of them to be time-independent. Check this
+       only via w==ca2. It is allowed that both cs2 and cv2 depend on scale (no
        modifications if IC required). */
     fracgdm = 0;
     if (pba->has_gdm == _TRUE_) {
@@ -5248,7 +5248,7 @@ int perturb_initial_conditions(struct precision * ppr,
                  "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
       cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
       cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
-    }  
+    }
     /* some other shortcut notations */
     csTerm4 = 4. + 3.*cs2_gdm - 6.*w_gdm;
     csTerm1 = 1. + 2.*cs2_gdm - 3.*w_gdm;
@@ -5308,8 +5308,8 @@ int perturb_initial_conditions(struct precision * ppr,
          equations of motion. */
 
       /* GDM_CLASS: spatial curvature s2_squared terms are not included when GDM is
-         requested, because they should be irrelevant at tau_ini ~ 0.001 for any sensible 
-         omega_k. All the terms still in there are left overs from the original class. 
+         requested, because they should be irrelevant at tau_ini ~ 0.001 for any sensible
+         omega_k. All the terms still in there are left overs from the original class.
          Checked to be exactly 1. */
 
       /* photon density */
@@ -5342,17 +5342,17 @@ int perturb_initial_conditions(struct precision * ppr,
       }
 
       /* GDM_CLASS
-         Here is C=1, compare 3.7 of 1004.5509, (1.-om*tau/5.) includes a correction 
+         Here is C=1, compare 3.7 of 1004.5509, (1.-om*tau/5.) includes a correction
          factor in a matter radiation universe. But we can make sure that
          omega tau << 1 . */
       if (pba->has_gdm == _TRUE_) {
         /* initial conditions need to be modified in case of time varying w*/
         ppw->pv->y[ppw->pv->index_pt_delta_gdm] =  (-(4.-3.*cs2_gdm)*(1.+w_gdm)/4./
           csTerm4 + 12.*cv2_gdm*(cs2_gdm-w_gdm)/csTerm4/RnuTerm)
-          *ktau_two* ppr->curvature_ini;  
+          *ktau_two* ppr->curvature_ini;
         ppw->pv->y[ppw->pv->index_pt_theta_gdm] = -(cs2_gdm/4./csTerm4 + 4.*cv2_gdm*(2.+3.
           *(cs2_gdm-w_gdm))/3./(1.+w_gdm)/csTerm4/RnuTerm)
-          *ktau_three*k* ppr->curvature_ini ; 
+          *ktau_three*k* ppr->curvature_ini ;
         if (ppt->dynamic_shear_gdm == _TRUE_) {
           ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 8./3.*cv2_gdm/(1.+w_gdm)/RnuTerm*ktau_two*ppr->curvature_ini;  /*from Hu's GDM paper, we only need initial conditions in case the fluid shear is dynamical */
         }
@@ -6453,12 +6453,12 @@ int perturb_einstein(
     if (ppt->gauge == newtonian) {
 
       /* GDM_CLASS:
-         Define the algebraic shear patterned after the dynamic shear, constant w. 
-         Newtonian gauge needs to numerically agree with the sync version, because it is 
-         gauge inv. Need to produce the gdm contribution to rho_plus_p_shear here because 
-         because we don't want to call from perturb_total_stress_energy 
-         perturbed_einstein, because perturbed_einstein calls 
-         perturbed_total_stress_energy in order to calculate mt quantities in 
+         Define the algebraic shear patterned after the dynamic shear, constant w.
+         Newtonian gauge needs to numerically agree with the sync version, because it is
+         gauge inv. Need to produce the gdm contribution to rho_plus_p_shear here because
+         because we don't want to call from perturb_total_stress_energy
+         perturbed_einstein, because perturbed_einstein calls
+         perturbed_total_stress_energy in order to calculate mt quantities in
          perturbed_einstein. We treat the dynamical shear in perturb_total_stress_energy
       */
       if ((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)) {
@@ -6545,8 +6545,8 @@ int perturb_einstein(
       /* alpha = (h'+6eta')/2k^2 */
       ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
-      /* GDM_CLASS: define the algebraic shear, patterned after the dynamic shear, for 
-        constant w. We need to add the gdm contribution of rho_plus_p_shear here because 
+      /* GDM_CLASS: define the algebraic shear, patterned after the dynamic shear, for
+        constant w. We need to add the gdm contribution of rho_plus_p_shear here because
         we don't want to call perturbed_einstein from  perturb_total_stress_energy */
       if((pba->has_gdm == _TRUE_) && (ppt->dynamic_shear_gdm == _FALSE_)){
         ppw->pvecmetric[ppw->index_mt_shear_gdm] = 8.* cv2_gdm /(15.*(1.+w_gdm)*a_prime_over_a)*(y[ppw->pv->index_pt_theta_gdm] +  ppw->pvecmetric[ppw->index_mt_alpha]*k2);
@@ -6677,7 +6677,7 @@ int perturb_einstein(
 
 }
 
-/* GDM_CLASS: need to be careful if perturb_total_stress_energy is called in other 
+/* GDM_CLASS: need to be careful if perturb_total_stress_energy is called in other
    functions than perturbed_einstein: algeb. fluid shear is missing */
 int perturb_total_stress_energy(
                                 struct precision * ppr,
@@ -7098,7 +7098,7 @@ int perturb_total_stress_energy(
       ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
       ppw->rho_plus_p_theta += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
       ppw->delta_p += (
-            cs2_gdm * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm] 
+            cs2_gdm * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm]
             + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w_gdm)*(cs2_gdm - ca2_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];)
       if(ppt->dynamic_shear_gdm == _TRUE_) {
           double shear_gdm = y[ppw->pv->index_pt_shear_gdm];
@@ -7113,7 +7113,7 @@ int perturb_total_stress_energy(
         if (ppt->gauge == newtonian)
           rho_plus_p_theta_m += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]; // contribution to [(rho+p)theta]_matter
         rho_plus_p_m += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm];
-      }      
+      }
     }
     /* END GDM_CLASS */
 
@@ -9190,7 +9190,7 @@ int perturb_derivs(double tau,
       }
       else {
         shear_gdm = ppw->pvecmetric[ppw->index_mt_shear_gdm];
-      } 
+      }
 
       dy[pv->index_pt_theta_gdm] = // fluid velocity (rewritten in terms of \Pi_{nad})
         -(1.-3.*ca2_gdm)*a_prime_over_a*y[pv->index_pt_theta_gdm]
@@ -9201,7 +9201,7 @@ int perturb_derivs(double tau,
       if (ppt->dynamic_shear_gdm == _TRUE_) {
         dy[pv->index_pt_shear_gdm] = /* fluid shear */
           -3.*a_prime_over_a*y[pv->index_pt_shear_gdm]
-          +8./3.*cv2_gdm/(1.+w_gdm)*(y[pv->index_pt_theta_gdm] + metric_shear);  
+          +8./3.*cv2_gdm/(1.+w_gdm)*(y[pv->index_pt_theta_gdm] + metric_shear);
       }
 
     }
@@ -10361,7 +10361,7 @@ int perturb_rsa_idr_delta_and_theta(
     calculate the sound speed and viscosity for different GDM parametrisations.
     And some additional functions needed. See the comments in GDM_explanatory.ini for
     how to use those functions from the parameter files.
-*/   
+*/
 
 //  the smooth cs2 and cv2 pixels in smooth_pixels_gdm
 double c2_piece(double lnap,
@@ -10382,26 +10382,26 @@ double twoD_pixel(struct background *pba,
   int i;
 
   /*--> smooth bins case */
-  if (pba->smooth_pixels_gdm == _TRUE_) { 
+  if (pba->smooth_pixels_gdm == _TRUE_) {
     double timetable[pba->time_bins_num_gdm];  //stores the stitching times
     double timeratios[pba->time_bins_num_gdm]; //needed for the transition width awidth
     double awidth;
     double lnap; // ln((a/ atrans)^awidth), the arguments of the error function
     //calculate the geometric mean of pixel centers (=algebraic mean for lna)
     //because w_piece and rho_piece are stitched together at those times.
-    for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) {
       timetable[i]= sqrt(pba->time_values_gdm[i]*pba->time_values_gdm[i+1]);
       timetable[pba->time_bins_num_gdm-2]=pba->time_values_gdm[pba->time_bins_num_gdm-1]; //replace the last entry by the final bin end
       timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
     }
     //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
-    awidth=pba->time_transition_width_gdm/min(timeratios,pba->time_bins_num_gdm-1); 
+    awidth=pba->time_transition_width_gdm/min(timeratios,pba->time_bins_num_gdm-1);
     //stitch pieces together
-    for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which stitching region the time a is 
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which stitching region the time a is
       if ((previous_time < a_rel) && (a_rel <= timetable[i])) {
         lnap = awidth*log(a_rel/pba->time_values_gdm[i]);
         // the cx1 is earlier than cx2. And c1x is at smaller k than c2x.
-        twoD = c2_piece(lnap, 
+        twoD = c2_piece(lnap,
                         c_values_gdm[i],
                         c_values_gdm[i+1]);
         break; //this breaks out of the time-loop only (i-loop)
@@ -10411,7 +10411,7 @@ double twoD_pixel(struct background *pba,
       }
     }
   }
-  /*--> sharp bins case */      
+  /*--> sharp bins case */
   else {
     for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which pixel a is
       if((previous_time < a_rel) && (a_rel <= pba->time_values_gdm[i])) {
@@ -10420,8 +10420,8 @@ double twoD_pixel(struct background *pba,
       }
       else {
         previous_time = pba->time_values_gdm[i];
-      }       
-    }  
+      }
+    }
   }
 
   return twoD;
@@ -10435,10 +10435,10 @@ double cs2_gdm_of_a_and_k(struct background *pba,
                           double k) {
   double cs2=0.;
 
-  /* Time-only binned GDM case */ 
+  /* Time-only binned GDM case */
   if (pba->type_gdm == time_only_bins_gdm) {
       cs2=twoD_pixel(pba, a, k, pba->cs2_values_gdm);
-  } 
+  }
 
   return  cs2;
 
@@ -10451,7 +10451,7 @@ double cv2_gdm_of_a_and_k(struct background *pba,
                double k) {
   double cv2 =0;
 
-  /* Time-only binned GDM case */ 
+  /* Time-only binned GDM case */
   if (pba->type_gdm == time_only_bins_gdm) {
     cv2 = twoD_pixel(pba, a, k, pba->cv2_values_gdm);
   }

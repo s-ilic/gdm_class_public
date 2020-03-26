@@ -121,7 +121,7 @@ struct perturbs
 
   /* GDM_CLASS: new perturbation variables */
   short dynamic_shear_gdm;  /**< do we have a dynamical or nondynamical fluid shear?*/
-  short dynamic_pinad_gdm;  /**< do we have a dynamical or nondynamical fluid non-adiabatic pressure?*/ 
+  short dynamic_pinad_gdm;  /**< do we have a dynamical or nondynamical fluid non-adiabatic pressure?*/
 
   /* perturbed recombination */
   /** Do we want to consider perturbed temperature and ionization fraction? */

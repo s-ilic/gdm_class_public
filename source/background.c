@@ -2769,21 +2769,21 @@ double oneD_pixel(struct background *pba,
                                        double awidth,
                                        double w1,
                                        double w2)) {
-    
+
   double a_rel = a / pba->a_today;
   double previous_time=0.; //this starts at 0 and will be incremented
   double oneD=0.;
   int i;
 
   /* smooth bins case */
-  if(pba->smooth_bins_gdm == _TRUE_){ 
+  if(pba->smooth_bins_gdm == _TRUE_){
     double timetable[pba->time_bins_num_gdm]; //contains the values where erf will be stitched together
     double timeratios[pba->time_bins_num_gdm]; //stitching times over bin edge times
     double awidth; // transition width of erf
     double lnap; // ln((a/ atrans)^awidth), time argument of functions w_piece, ca2_piece, rho_piece
     //calculate the geometric mean of pixel centers (=algebraic mean for lna)
     //because w_piece and rho_piece are stitched together at those times.
-    for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) {
       timetable[i]= sqrt(pba->time_values_gdm[i]*pba->time_values_gdm[i+1]);
       timetable[pba->time_bins_num_gdm-2]=pba->time_values_gdm[pba->time_bins_num_gdm-1]; //replace the last entry by the final bin end
       timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
@@ -2791,7 +2791,7 @@ double oneD_pixel(struct background *pba,
     //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
     awidth=pba->time_transition_width_gdm/min_arr(timeratios,pba->time_bins_num_gdm-1);
     //stitch pieces together
-    for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which bin the time a is 
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which bin the time a is
       if((previous_time < a_rel) && (a_rel <= timetable[i])) {
         lnap= awidth*log(a_rel/pba->time_values_gdm[i]);
         // the w1 is later and w2 is the eariler one
@@ -2804,13 +2804,13 @@ double oneD_pixel(struct background *pba,
     }
   }
   /* sharp bins case */
-  else { 
-    for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which stitching region the time a is 
+  else {
+    for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which stitching region the time a is
       if((previous_time < a_rel) && (a_rel <= pba->time_values_gdm[i])) {
         oneD = pba->w_values_gdm[i];
         break;
       }
-      else { 
+      else {
         previous_time = pba->time_values_gdm[i];
       }
     }
@@ -2827,7 +2827,7 @@ double rho_piece(double lnap,
                  double w1,
                  double w2) {
   return exp(
-               (-3.*((w2 - w1)/(exp(lnap*lnap)*_SQRT_PI_) 
+               (-3.*((w2 - w1)/(exp(lnap*lnap)*_SQRT_PI_)
                + lnap*(2. + w1 + w2 + (w2 - w1)*erf(lnap))))/(2.*awidth)
             );
 }
@@ -2839,13 +2839,13 @@ double rho_gdm_of_a(struct background *pba,
   double rho_gdm=0.;
   double a_rel = a / pba->a_today;
 
-  /*time-only binned GDM case */ 
+  /*time-only binned GDM case */
   if(pba->type_gdm==time_only_bins_gdm){
 
     double previous_time=0.;
 
-    /* smooth bins case */  
-    if(pba->smooth_bins_gdm == _TRUE_) { 
+    /* smooth bins case */
+    if(pba->smooth_bins_gdm == _TRUE_) {
 
       double rho_gdm_table[pba->time_bins_num_gdm-1];  // stores the values rho_gdm at the end of each stitching region
       rho_gdm_table[pba->time_bins_num_gdm -2]=1.; // end of last pixel is GDM density today
@@ -2858,7 +2858,7 @@ double rho_gdm_of_a(struct background *pba,
 
       //calculate the geometric mean of pixel centers (=algebraic mean for lna)
       //w_piece and rho_piece will be stitched together at those times in timetable.
-      for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
+      for (i=0; i < pba->time_bins_num_gdm -1; i++) {
         timetable[i]= sqrt(pba->time_values_gdm[i]*pba->time_values_gdm[i+1]);
         timetable[pba->time_bins_num_gdm-2]=pba->a_today; //replace the last entry by a_today
         timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]); // used to calculate transition width awidth
@@ -2880,7 +2880,7 @@ double rho_gdm_of_a(struct background *pba,
         rho_gdm_table[i] = rho_gdm_table[i+1]*rho_piece(lnap, awidth, pba->w_values_gdm[i+1], pba->w_values_gdm[i+2])/normtable[i+1];
       }
       //now we can interpolate the density inside each stitching region
-      for (i=0; i < pba->time_bins_num_gdm-1; i++) { 
+      for (i=0; i < pba->time_bins_num_gdm-1; i++) {
         if((previous_time < a_rel) && (a_rel <= timetable[i])) { // check if a sits in the bin...
           lnap= awidth*log(a_rel/pba->time_values_gdm[i]);
           rho_gdm = rho_gdm_table[i]*rho_piece(lnap, awidth, pba->w_values_gdm[i], pba->w_values_gdm[i+1])/normtable[i]*pba->Omega0_gdm * pow(pba->H0,2); //...and integrate the density starting from the pixel end
@@ -2924,7 +2924,7 @@ double w_gdm_of_a(struct background *pba,
 
   double w = 0.;
 
-  /* Time-only binned GDM case */ 
+  /* Time-only binned GDM case */
   if(pba->type_gdm == time_only_bins_gdm){
     w = oneD_pixel(pba, a ,w_piece);
   }
@@ -2941,7 +2941,7 @@ double ca2_gdm_of_a(struct background *pba,
 
   double ca2 = 0.;
 
-  /* Time-only binned GDM case */ 
+  /* Time-only binned GDM case */
   if (pba->type_gdm == time_only_bins_gdm) {
     ca2 = oneD_pixel(pba, a ,ca2_piece);
   }

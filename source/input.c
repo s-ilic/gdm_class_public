@@ -778,7 +778,7 @@ int input_read_parameters(
 
 
   /** - GDM_CLASS : Omega_0_gdm (gdm fluid) */
-  
+
   class_call(parser_read_double(pfc,"Omega_gdm",&param1,&flag1,errmsg),
              errmsg,
              errmsg);
@@ -796,7 +796,7 @@ int input_read_parameters(
   Omega_tot += pba->Omega0_gdm;
 
   if (pba->Omega0_gdm != 0.) {
-  
+
     /* Selecting a GDM model */
     class_call(parser_read_string(pfc,"type_gdm",&string1,&flag1,errmsg),
                errmsg,
@@ -822,7 +822,7 @@ int input_read_parameters(
         class_stop(errmsg,"You wrote 'type_gdm = %s' which is not part of the GDM types   supported (so far: 'time_only_bins').",string1);
       }
     }
-  
+
     /* Flag for dynamic shear and algebraic non-adiabatic pressure (no by default) */
     class_call(parser_read_string(pfc,
                                   "dynamic_shear_gdm",
@@ -837,7 +837,7 @@ int input_read_parameters(
 
     /* Binned time-dependent-only GDM */
     if (pba->type_gdm == time_only_bins_gdm) {
-      
+
       // User decides if they want smooth transition between bins (no by default)
       class_call(parser_read_string(pfc,
                                     "smooth_bins_gdm",
@@ -851,8 +851,8 @@ int input_read_parameters(
         // User chooses a custom width for smooth transition
         class_read_double("time_transition_width_gdm",pba->time_transition_width_gdm);
       }
-  
-      // User-defined time bins 
+
+      // User-defined time bins
       class_call(parser_read_list_of_doubles(pfc,
                                              "time_values_gdm",
                                              &(int1),
@@ -881,7 +881,7 @@ int input_read_parameters(
         pba->time_values_gdm[1]=pba->a_today;
       }
 
-      // User-defined equation of state values in time bins 
+      // User-defined equation of state values in time bins
       class_call(parser_read_list_of_doubles(pfc,
                                              "w_values_gdm",
                                              &(int1),
@@ -899,16 +899,16 @@ int input_read_parameters(
         for (i=0; i<int1; i++) {
           pba->w_values_gdm[i] = pointer1[i];
         }
-          free(pointer1); 
+          free(pointer1);
       }
-      // Defaults to w = 0 in all bins 
+      // Defaults to w = 0 in all bins
       else {
         for (i=0; i<pba->time_bins_num_gdm; i++) {
           pba->w_values_gdm[i] = 0.;
         }
       }
-  
-      // User-defined sound speed values in time bins 
+
+      // User-defined sound speed values in time bins
       class_call(parser_read_list_of_doubles(pfc,
                                              "cs2_values_gdm",
                                              &(int1),
@@ -926,16 +926,16 @@ int input_read_parameters(
         for (i=0; i<int1; i++) {
           pba->cs2_values_gdm[i] = pointer1[i];
         }
-          free(pointer1); 
+          free(pointer1);
       }
-      // Defaults to cs2 = 0 in all bins 
+      // Defaults to cs2 = 0 in all bins
       else {
         for (i=0; i<pba->time_bins_num_gdm; i++) {
           pba->cs2_values_gdm[i] = 0.;
         }
       }
-  
-      // User-defined viscosity values in time bins 
+
+      // User-defined viscosity values in time bins
       class_call(parser_read_list_of_doubles(pfc,
                                              "cv2_values_gdm",
                                              &(int1),
@@ -953,9 +953,9 @@ int input_read_parameters(
         for (i=0; i<int1; i++) {
           pba->cv2_values_gdm[i] = pointer1[i];
         }
-          free(pointer1); 
+          free(pointer1);
       }
-      // Defaults to cv2 = 0 in all bins 
+      // Defaults to cv2 = 0 in all bins
       else {
         for (i=0; i<pba->time_bins_num_gdm; i++) {
           pba->cv2_values_gdm[i] = 0.;
@@ -963,7 +963,7 @@ int input_read_parameters(
       }
 
     }
-  
+
   }
 
   /** - END GDM_CLASS */
@@ -3371,7 +3371,7 @@ int input_default_params(
   pba->Omega0_idm_dr = 0.0;
   pba->T_idr = 0.0;
   pba->Omega0_b = 0.022032/pow(pba->h,2);
-  /* GDM_CLASS: default values of new GDM variables */ 
+  /* GDM_CLASS: default values of new GDM variables */
   pba->Omega0_gdm = 0.;
   pba->type_gdm=time_only_bins_gdm;
   pba->smooth_bins_gdm = _FALSE_;
@@ -3457,7 +3457,7 @@ int input_default_params(
 
   /** - perturbation structure */
 
-  /* GDM_CLASS: default values of new GDM variables */ 
+  /* GDM_CLASS: default values of new GDM variables */
   ppt->dynamic_shear_gdm = _FALSE_;
   /* END GDM_CLASS */
 

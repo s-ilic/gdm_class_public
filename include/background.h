@@ -72,9 +72,9 @@ struct background
   int time_bins_num_gdm;  /**< \f$ number of time bins */
   double  w_values_gdm[_MAX_NUMBER_OF_TIME_BINS_];   /**< \f$ values of w bins */
   double  cs2_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of cs2 bins */
-  double  cv2_values_gdm[_MAX_NUMBER_OF_TIME_BINS_];  /**< \f$ values of cv2 bins */  
-  double  time_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of pixel edges of a-bins */  
-  double  time_transition_width_gdm;    /**< \f$ a number of order unity that determines the width of the smooth transition of time bins*/    
+  double  cv2_values_gdm[_MAX_NUMBER_OF_TIME_BINS_];  /**< \f$ values of cv2 bins */
+  double  time_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of pixel edges of a-bins */
+  double  time_transition_width_gdm;    /**< \f$ a number of order unity that determines the width of the smooth transition of time bins*/
   short   smooth_bins_gdm; /**< \f$ flag (default no) whether to use smooth bins */
   /* END GDM_CLASS */
 
@@ -342,7 +342,7 @@ struct background
       */
 
   //@{
-      
+
   enum type_options_gdm type_gdm; /**< flags GDM parametrization */
 
   //@}
@@ -602,7 +602,7 @@ extern "C" {
 
   double w_piece(
                double lnap,
-               double w1, 
+               double w1,
                double w2
                );
 
@@ -614,11 +614,11 @@ extern "C" {
                );
 
   double rho_piece(
-               double lnap, 
+               double lnap,
                double awidth,
                double w1,
                double w2
-               );  
+               );
 
   double rho_gdm_of_a(
                struct background *pba,
@@ -629,7 +629,7 @@ extern "C" {
                struct background *pba,
                double a
                );
-  
+
   double ca2_gdm_of_a(
                struct background *pba,
                double a
