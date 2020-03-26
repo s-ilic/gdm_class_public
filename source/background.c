@@ -312,6 +312,14 @@ int background_functions(
   p_tot += 0;
   rho_m += pvecback[pba->index_bg_rho_b];
 
+  /* cdm */
+  if (pba->has_cdm == _TRUE_) {
+    pvecback[pba->index_bg_rho_cdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a_rel,3);
+    rho_tot += pvecback[pba->index_bg_rho_cdm];
+    p_tot += 0.;
+    rho_m += pvecback[pba->index_bg_rho_cdm];
+  }
+
   /* GDM_CLASS : gdm */
   if (pba->has_gdm == _TRUE_) {
     pvecback[pba->index_bg_w_gdm] = w_gdm_of_a(pba,a);
@@ -320,14 +328,6 @@ int background_functions(
     rho_tot += pvecback[pba->index_bg_rho_gdm];
     p_tot += pvecback[pba->index_bg_w_gdm] * pvecback[pba->index_bg_rho_gdm];
     rho_m += pvecback[pba->index_bg_rho_gdm];
-  }
-
-  /* cdm */
-  if (pba->has_cdm == _TRUE_) {
-    pvecback[pba->index_bg_rho_cdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a_rel,3);
-    rho_tot += pvecback[pba->index_bg_rho_cdm];
-    p_tot += 0.;
-    rho_m += pvecback[pba->index_bg_rho_cdm];
   }
 
   /* dcdm */
@@ -955,13 +955,13 @@ int background_indices(
   /* - index for rho_b (baryon density) */
   class_define_index(pba->index_bg_rho_b,_TRUE_,index_bg,1);
 
+  /* - index for rho_cdm */
+  class_define_index(pba->index_bg_rho_cdm,pba->has_cdm,index_bg,1);
+
   /* - GDM_CLASS : indexes for GDM quantities (density, w and ca2) */
   class_define_index(pba->index_bg_rho_gdm,pba->has_gdm,index_bg,1);
   class_define_index(pba->index_bg_w_gdm,pba->has_gdm,index_bg,1);
   class_define_index(pba->index_bg_ca2_gdm,pba->has_gdm,index_bg,1);
-
-  /* - index for rho_cdm */
-  class_define_index(pba->index_bg_rho_cdm,pba->has_cdm,index_bg,1);
 
   /* - indices for ncdm. We only define the indices for ncdm1
      (density, pressure, pseudo-pressure), the other ncdm indices
@@ -2268,13 +2268,12 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"comov.snd.hrz.",_TRUE_);
   class_store_columntitle(titles,"(.)rho_g",_TRUE_);
   class_store_columntitle(titles,"(.)rho_b",_TRUE_);
-
+  class_store_columntitle(titles,"(.)rho_cdm",pba->has_cdm);
   /* GDM_CLASS : names of newly stored GDM variables */
   class_store_columntitle(titles,"(.)rho_gdm",pba->has_gdm);
   class_store_columntitle(titles,"(.)w_gdm",pba->has_gdm);
   class_store_columntitle(titles,"(.)ca2_gdm",pba->has_gdm);
-
-  class_store_columntitle(titles,"(.)rho_cdm",pba->has_cdm);
+  /* END GDM_CLASS */
   if (pba->has_ncdm == _TRUE_){
     for (n=0; n<pba->N_ncdm; n++){
       sprintf(tmp,"(.)rho_ncdm[%d]",n);
@@ -2335,14 +2334,12 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rs],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_g],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_b],_TRUE_,storeidx);
-
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_cdm],pba->has_cdm,storeidx);
     /* GDM_CLASS : storing new GDM variables */
     class_store_double(dataptr,pvecback[pba->index_bg_rho_gdm],pba->has_gdm,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_w_gdm],pba->has_gdm,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_ca2_gdm],pba->has_gdm,storeidx);
-
-
-    class_store_double(dataptr,pvecback[pba->index_bg_rho_cdm],pba->has_cdm,storeidx);
+    /* END GDM_CLASS */
     if (pba->has_ncdm == _TRUE_){
       for (n=0; n<pba->N_ncdm; n++){
         class_store_double(dataptr,pvecback[pba->index_bg_rho_ncdm1+n],_TRUE_,storeidx);
@@ -2452,6 +2449,10 @@ int background_derivs(
   rho_M = pvecback[pba->index_bg_rho_b];
   if (pba->has_cdm)
     rho_M += pvecback[pba->index_bg_rho_cdm];
+  /* GDM_CLASS */
+  if (pba->has_gdm)
+    rho_M += pvecback[pba->index_bg_rho_gdm];
+  /* END GDM_CLASS */
   if (pba->has_idm_dr)
     rho_M += pvecback[pba->index_bg_rho_idm_dr];
 
@@ -2647,6 +2648,12 @@ int background_output_budget(
       _class_print_species_("Cold Dark Matter",cdm);
       budget_matter+=pba->Omega0_cdm;
     }
+    /* GDM_CLASS */
+    if(pba->has_gdm){
+      _class_print_species_("Generalised Dark Matter",cdm);
+      budget_matter+=pba->Omega0_gdm;
+    }
+    /* END GDM_CLASS */
     if(pba->has_idm_dr){
       _class_print_species_("Interacting Dark Matter - DR ",idm_dr);
       budget_matter+=pba->Omega0_idm_dr;

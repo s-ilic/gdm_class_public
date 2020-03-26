@@ -207,10 +207,10 @@ struct background
 
   int index_bg_rho_g;         /**< photon density */
   int index_bg_rho_b;         /**< baryon density */
+  int index_bg_rho_cdm;       /**< cdm density */
   int index_bg_rho_gdm;       /**< GDM_CLASS: gdm density */
   int index_bg_w_gdm;         /**< GDM_CLASS: gdm equation of state */
   int index_bg_ca2_gdm;       /**< GDM_CLASS: gdm ca2 */
-  int index_bg_rho_cdm;       /**< cdm density */
   int index_bg_rho_lambda;    /**< cosmological constant density */
   int index_bg_rho_fld;       /**< fluid density */
   int index_bg_w_fld;         /**< fluid equation of state */

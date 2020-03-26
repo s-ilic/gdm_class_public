@@ -240,6 +240,7 @@ struct perturbs
   short has_source_delta_g;     /**< do we need source for delta of gammas? */
   short has_source_delta_b;     /**< do we need source for delta of baryons? */
   short has_source_delta_cdm;   /**< do we need source for delta of cold dark matter? */
+  short has_source_delta_gdm;   /**< GDM_CLASS: do we need source for delta of GDM ? */
   short has_source_delta_dcdm;  /**< do we need source for delta of DCDM? */
   short has_source_delta_fld;   /**< do we need source for delta of dark energy? */
   short has_source_delta_scf;   /**< do we need source for delta from scalar field? */
@@ -254,6 +255,7 @@ struct perturbs
   short has_source_theta_g;     /**< do we need source for theta of gammas? */
   short has_source_theta_b;     /**< do we need source for theta of baryons? */
   short has_source_theta_cdm;   /**< do we need source for theta of cold dark matter? */
+  short has_source_theta_gdm;   /**< GDM_CLASS: do we need source for theta of GDM? */
   short has_source_theta_dcdm;  /**< do we need source for theta of DCDM? */
   short has_source_theta_fld;   /**< do we need source for theta of dark energy? */
   short has_source_theta_scf;   /**< do we need source for theta of scalar field? */
@@ -287,6 +289,7 @@ struct perturbs
   int index_tp_delta_g;   /**< index value for delta of gammas */
   int index_tp_delta_b;   /**< index value for delta of baryons */
   int index_tp_delta_cdm; /**< index value for delta of cold dark matter */
+  int index_tp_delta_gdm; /**< GDM_CLASS: index value for delta of GDM */
   int index_tp_delta_dcdm;/**< index value for delta of DCDM */
   int index_tp_delta_fld;  /**< index value for delta of dark energy */
   int index_tp_delta_scf;  /**< index value for delta of scalar field */
@@ -304,6 +307,7 @@ struct perturbs
   int index_tp_theta_g;     /**< index value for theta of gammas */
   int index_tp_theta_b;     /**< index value for theta of baryons */
   int index_tp_theta_cdm;   /**< index value for theta of cold dark matter */
+  int index_tp_theta_gdm;   /**< GDM_CLASSS: index value for theta of GDM */
   int index_tp_theta_dcdm;  /**< index value for theta of DCDM */
   int index_tp_theta_fld;   /**< index value for theta of dark energy */
   int index_tp_theta_scf;   /**< index value for theta of scalar field */
@@ -465,9 +469,9 @@ struct perturb_vector
   int index_pt_delta_cdm; /**< cdm density */
   int index_pt_theta_cdm; /**< cdm velocity */
   /* GDM_CLASS */
-  int index_pt_delta_fld;  /**< GDM density */
-  int index_pt_theta_fld;  /**< GDM velocity */
-  int index_pt_shear_fld;  /**< GDM shear (MICHI) */
+  int index_pt_delta_gdm;  /**< GDM density */
+  int index_pt_theta_gdm;  /**< GDM velocity */
+  int index_pt_shear_gdm;  /**< GDM shear (MICHI) */
   /* END GDM_CLASS */
   int index_pt_delta_idm_dr;/**< idm_dr density */
   int index_pt_theta_idm_dr;/**< idm_dr velocity */
@@ -538,7 +542,7 @@ struct perturb_workspace
 
   //@{
 
-  int index_mt_shear_fld;     /**< GDM_CLASS: algebraic fluid shear used when shear is not dynamic */
+  int index_mt_shear_gdm;     /**< GDM_CLASS: algebraic fluid shear used when shear is not dynamic */
   int index_mt_psi;           /**< psi in longitudinal gauge */
   int index_mt_phi_prime;     /**< (d phi/d conf.time) in longitudinal gauge */
   int index_mt_h_prime;       /**< h' (wrt conf. time) in synchronous gauge */
@@ -932,13 +936,13 @@ extern "C" {
                double c12,
                );
 
-  double cs2_fld_of_a_and_k(
+  double cs2_gdm_of_a_and_k(
                struct background *pba,
                double a,
                double k
                );
 
-  double cv2_fld_of_a_and_k(
+  double cv2_gdm_of_a_and_k(
                struct background *pba,
                double a,
                double k

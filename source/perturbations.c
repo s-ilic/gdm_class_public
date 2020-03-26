@@ -227,6 +227,7 @@ int perturb_output_data(
           class_store_double(dataptr,tk[ppt->index_tp_delta_g],ppt->has_source_delta_g,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_delta_b],ppt->has_source_delta_b,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_delta_cdm],ppt->has_source_delta_cdm,storeidx);
+          class_store_double(dataptr,tk[ppt->index_tp_delta_gdm],ppt->has_source_delta_gdm,storeidx); // GDM_CLASS
           class_store_double(dataptr,tk[ppt->index_tp_delta_idm_dr],ppt->has_source_delta_idm_dr,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_delta_fld],ppt->has_source_delta_fld,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_delta_ur],ppt->has_source_delta_ur,storeidx);
@@ -255,6 +256,7 @@ int perturb_output_data(
           class_store_double(dataptr,tk[ppt->index_tp_theta_g],ppt->has_source_theta_g,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_theta_b],ppt->has_source_theta_b,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_theta_cdm],ppt->has_source_theta_cdm,storeidx);
+          class_store_double(dataptr,tk[ppt->index_tp_theta_gdm],ppt->has_source_theta_gdm,storeidx); // GDM_CLASS
           class_store_double(dataptr,tk[ppt->index_tp_theta_idm_dr],ppt->has_source_theta_idm_dr,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_theta_fld],ppt->has_source_theta_fld,storeidx);
           class_store_double(dataptr,tk[ppt->index_tp_theta_ur],ppt->has_source_theta_ur,storeidx);
@@ -276,6 +278,7 @@ int perturb_output_data(
 
         /* rescale and reorder the matter transfer functions following the CMBFAST/CAMB convention */
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_cdm]/k2,ppt->has_source_delta_cdm,storeidx,0.0);
+        class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_gdm]/k2,ppt->has_source_delta_gdm,storeidx,0.0); // GDM_CLASS
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_idm_dr]/k2,ppt->has_source_delta_idm_dr,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_b]/k2,ppt->has_source_delta_b,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_g]/k2,ppt->has_source_delta_g,storeidx,0.0);
@@ -320,6 +323,7 @@ int perturb_output_titles(
       class_store_columntitle(titles,"d_g",_TRUE_);
       class_store_columntitle(titles,"d_b",_TRUE_);
       class_store_columntitle(titles,"d_cdm",pba->has_cdm);
+      class_store_columntitle(titles,"d_gdm",pba->has_gdm); // GDM_CLASS
       class_store_columntitle(titles,"d_idm_dr",pba->has_idm_dr);
       class_store_columntitle(titles,"d_fld",pba->has_fld);
       class_store_columntitle(titles,"d_ur",pba->has_ur);
@@ -349,6 +353,7 @@ int perturb_output_titles(
       class_store_columntitle(titles,"t_g",_TRUE_);
       class_store_columntitle(titles,"t_b",_TRUE_);
       class_store_columntitle(titles,"t_cdm",((pba->has_cdm == _TRUE_) && (ppt->gauge != synchronous)));
+      class_store_columntitle(titles,"t_gdm",pba->has_gdm); // GDM_CLASS
       class_store_columntitle(titles,"t_idm_dr",pba->has_idm_dr);
       class_store_columntitle(titles,"t_fld",pba->has_fld);
       class_store_columntitle(titles,"t_ur",pba->has_ur);
@@ -370,6 +375,7 @@ int perturb_output_titles(
 
     class_store_columntitle(titles,"k (h/Mpc)",_TRUE_);
     class_store_columntitle(titles,"-T_cdm/k2",_TRUE_);
+    class_store_columntitle(titles,"-T_gdm/k2",_TRUE_); // GDM_CLASS
     class_store_columntitle(titles,"-T_idm_dr/k2",_TRUE_);
     class_store_columntitle(titles,"-T_b/k2",_TRUE_);
     class_store_columntitle(titles,"-T_g/k2",_TRUE_);
@@ -1045,6 +1051,7 @@ int perturb_indices_of_perturbs(
   ppt->has_source_delta_g = _FALSE_;
   ppt->has_source_delta_b = _FALSE_;
   ppt->has_source_delta_cdm = _FALSE_;
+  ppt->has_source_delta_gdm = _FALSE_; // GDM_CLASS
   ppt->has_source_delta_dcdm = _FALSE_;
   ppt->has_source_delta_fld = _FALSE_;
   ppt->has_source_delta_scf = _FALSE_;
@@ -1059,6 +1066,7 @@ int perturb_indices_of_perturbs(
   ppt->has_source_theta_g = _FALSE_;
   ppt->has_source_theta_b = _FALSE_;
   ppt->has_source_theta_cdm = _FALSE_;
+  ppt->has_source_theta_gdm = _FALSE_; // GDM_CLASS
   ppt->has_source_theta_dcdm = _FALSE_;
   ppt->has_source_theta_fld = _FALSE_;
   ppt->has_source_theta_scf = _FALSE_;
@@ -1147,6 +1155,10 @@ int perturb_indices_of_perturbs(
         ppt->has_source_delta_b = _TRUE_;
         if (pba->has_cdm == _TRUE_)
           ppt->has_source_delta_cdm = _TRUE_;
+        /* GDM_CLASS */
+        if (pba->has_gdm == _TRUE_)
+          ppt->has_source_delta_gdm = _TRUE_;
+        /* END GDM_CLASS */
         if (pba->has_dcdm == _TRUE_)
           ppt->has_source_delta_dcdm = _TRUE_;
         if (pba->has_fld == _TRUE_)
@@ -1178,6 +1190,10 @@ int perturb_indices_of_perturbs(
         ppt->has_source_theta_b = _TRUE_;
         if ((pba->has_cdm == _TRUE_) && (ppt->gauge != synchronous))
           ppt->has_source_theta_cdm = _TRUE_;
+        /* GDM_CLASS */
+        if (pba->has_gdm == _TRUE_)
+          ppt->has_source_theta_gdm = _TRUE_;
+        /* END GDM_CLASS */
         if (pba->has_dcdm == _TRUE_)
           ppt->has_source_theta_dcdm = _TRUE_;
         if (pba->has_fld == _TRUE_)
@@ -1256,6 +1272,7 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_delta_g,    ppt->has_source_delta_g,   index_type,1);
       class_define_index(ppt->index_tp_delta_b,    ppt->has_source_delta_b,   index_type,1);
       class_define_index(ppt->index_tp_delta_cdm,  ppt->has_source_delta_cdm, index_type,1);
+      class_define_index(ppt->index_tp_delta_gdm,  ppt->has_source_delta_gdm, index_type,1); // GDM_CLASS
       class_define_index(ppt->index_tp_delta_dcdm, ppt->has_source_delta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_delta_fld,  ppt->has_source_delta_fld, index_type,1);
       class_define_index(ppt->index_tp_delta_scf,  ppt->has_source_delta_scf, index_type,1);
@@ -1270,6 +1287,7 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_theta_g,    ppt->has_source_theta_g,   index_type,1);
       class_define_index(ppt->index_tp_theta_b,    ppt->has_source_theta_b,   index_type,1);
       class_define_index(ppt->index_tp_theta_cdm,  ppt->has_source_theta_cdm, index_type,1);
+      class_define_index(ppt->index_tp_theta_gdm,  ppt->has_source_theta_gdm, index_type,1); // GDM_CLASS
       class_define_index(ppt->index_tp_theta_dcdm, ppt->has_source_theta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_theta_fld,  ppt->has_source_theta_fld, index_type,1);
       class_define_index(ppt->index_tp_theta_scf,  ppt->has_source_theta_scf, index_type,1);
@@ -5413,22 +5431,12 @@ int perturb_initial_conditions(struct precision * ppr,
         /* velocity of ultra-relativistic neutrinos/relics */ //TBC
         if (pba->has_gdm == _TRUE_) { // GDM_CLASS
           theta_ur = -(23.+4*fracnu)/36./RnuTerm*ktau_three*k * ppr->curvature_ini ;
-        }
-        else {
-          theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared;
-        }
-
-        if (pba->has_gdm == _TRUE_) { // GDM_CLASS
           shear_ur = 2./3./RnuTerm*ktau_two * ppr->curvature_ini;
-        }
-        else {
-          shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
-        }
-
-        if (pba->has_gdm == _TRUE_) { // GDM_CLASS
           l3_ur = 0.;
         }
         else {
+          theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared;
+          shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
           l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
         }
 
