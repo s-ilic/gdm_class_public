@@ -121,7 +121,6 @@ struct perturbs
 
   /* GDM_CLASS: new perturbation variables */
   short dynamic_shear_gdm;  /**< do we have a dynamical or nondynamical fluid shear?*/
-  short dynamic_pinad_gdm;  /**< do we have a dynamical or nondynamical fluid non-adiabatic pressure?*/
 
   /* perturbed recombination */
   /** Do we want to consider perturbed temperature and ionization fraction? */
@@ -465,6 +464,11 @@ struct perturb_vector
   int index_pt_theta_b;   /**< baryon velocity */
   int index_pt_delta_cdm; /**< cdm density */
   int index_pt_theta_cdm; /**< cdm velocity */
+  /* GDM_CLASS */
+  int index_pt_delta_fld;  /**< GDM density */
+  int index_pt_theta_fld;  /**< GDM velocity */
+  int index_pt_shear_fld;  /**< GDM shear (MICHI) */
+  /* END GDM_CLASS */
   int index_pt_delta_idm_dr;/**< idm_dr density */
   int index_pt_theta_idm_dr;/**< idm_dr velocity */
   int index_pt_delta_dcdm; /**< dcdm density */
@@ -534,6 +538,7 @@ struct perturb_workspace
 
   //@{
 
+  int index_mt_shear_fld;     /**< GDM_CLASS: algebraic fluid shear used when shear is not dynamic */
   int index_mt_psi;           /**< psi in longitudinal gauge */
   int index_mt_phi_prime;     /**< (d phi/d conf.time) in longitudinal gauge */
   int index_mt_h_prime;       /**< h' (wrt conf. time) in synchronous gauge */
@@ -918,6 +923,26 @@ extern "C" {
                                   double * pvecthermo,
                                   struct perturb_workspace * ppw
                                   );
+
+  /** GDM_CLASS: new GDM functions **/
+
+  double c2_piece(
+               double lnap,
+               double c11,
+               double c12,
+               );
+
+  double cs2_fld_of_a_and_k(
+               struct background *pba,
+               double a,
+               double k
+               );
+
+  double cv2_fld_of_a_and_k(
+               struct background *pba,
+               double a,
+               double k
+               );
 
 #ifdef __cplusplus
 }
