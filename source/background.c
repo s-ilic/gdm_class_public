@@ -2752,6 +2752,7 @@ double min_arr(const double *arr,
 
 /* Equation for w in given time bin when smoothing is on */
 double w_piece(double lnap,
+               double dummy,
                double w1,
                double w2) {
   return w1/2. + w2/2. + ((w2 - w1)*erf(lnap))/2.;

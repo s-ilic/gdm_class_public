@@ -933,7 +933,7 @@ extern "C" {
   double c2_piece(
                double lnap,
                double c11,
-               double c12,
+               double c12
                );
 
   double cs2_gdm_of_a_and_k(

@@ -5261,7 +5261,7 @@ int perturb_initial_conditions(struct precision * ppr,
       fracgdm = ppw->pvecback[pba->index_bg_rho_gdm]/rho_m;
       w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
       ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
-      class_test(w != ca2,
+      class_test(w_gdm != ca2_gdm,
                  ppt->error_message,
                  "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
       cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
@@ -6597,12 +6597,10 @@ int perturb_einstein(
         double rho_m = ppw->pvecback[pba->index_bg_rho_b];
         double P_m = 0.;
         int n_ncdm;
+        rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
+        P_m += w_gdm*ppw->pvecback[pba->index_bg_rho_gdm];
         if (pba->has_cdm == _TRUE_) {
           rho_m += ppw->pvecback[pba->index_bg_rho_cdm];
-        }
-        if (pba->has_gdm == _TRUE_) {
-          rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
-          P_m += w*ppw->pvecback[pba->index_bg_rho_gdm];
         }
         if (pba->has_dcdm == _TRUE_) {
           rho_m += ppw->pvecback[pba->index_bg_rho_dcdm];
@@ -7107,10 +7105,10 @@ int perturb_total_stress_energy(
       ppw->rho_plus_p_theta += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
       ppw->delta_p += (
             cs2_gdm * ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm]
-            + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w_gdm)*(cs2_gdm - ca2_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];)
+            + 3./k/k*a*ppw->pvecback[pba->index_bg_H]*(1.+w_gdm)*(cs2_gdm - ca2_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm]);
       if(ppt->dynamic_shear_gdm == _TRUE_) {
           double shear_gdm = y[ppw->pv->index_pt_shear_gdm];
-          ppw->rho_plus_p_shear += (1.+w)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
+          ppw->rho_plus_p_shear += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*shear_gdm;
       }
       ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_gdm];
       if (ppt->has_source_delta_m == _TRUE_) {
@@ -8222,7 +8220,7 @@ int perturb_print_variables(double tau,
 
     /* GDM_CLASS */
     /* New sources */
-     if (ppt->gauge == synchronous) {
+    if (ppt->gauge == synchronous) {
       temperC = delta_g/4. + pvecmetric[ppw->index_mt_alpha_prime];
       ISW1C = y[ppw->pv->index_pt_eta] - pvecmetric[ppw->index_mt_alpha_prime] - 2.*a_prime_over_a*alpha ;
       ISW2C = pvecmetric[ppw->index_mt_eta_prime] - a_prime_over_a_prime*alpha - a_prime_over_a*pvecmetric[ppw->index_mt_alpha_prime];
@@ -8230,14 +8228,14 @@ int perturb_print_variables(double tau,
       doppldotC = y[ppw->pv->index_pt_theta_b]/k/k + alpha;
     }
     /* Newtonian sources to be filled in*/
-    else if (ppt->gauge == newtonian){
+    else if (ppt->gauge == newtonian) {
       temperC = 0.;
       ISW1C = 0.;
       ISW2C= pvecmetric[ppw->index_mt_phi_prime] ;
       dopplC=0.;
       doppldotC=0.;
     }
-    else{
+    else {
       temperC = 0.;
       ISW1C = 0.;
       ISW2C=0.;
@@ -8258,7 +8256,6 @@ int perturb_print_variables(double tau,
         shear_gdm = ppw->pvecmetric[ppw->index_mt_shear_gdm];
       }
       pinad_gdm = (cs2_gdm - ca2_gdm)*(delta_gdm + theta_gdm/k/k*3.0*pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H]*(1.+ w_gdm)) ;
-      }
     }
     /* END GDM_CLASS */
 
@@ -10371,7 +10368,7 @@ int perturb_rsa_idr_delta_and_theta(
     how to use those functions from the parameter files.
 */
 
-//  the smooth cs2 and cv2 pixels in smooth_pixels_gdm
+//  the smooth cs2 and cv2 bins in smooth_bins_gdm
 double c2_piece(double lnap,
                 double c11,
                 double c12) {
@@ -10382,7 +10379,7 @@ double c2_piece(double lnap,
 double twoD_pixel(struct background *pba,
                   double a,
                   double k, // unused dummy argument
-                  double c_values_gdm[_MAX_NUMBER_OF_TIME_PIXELS_]) {
+                  double c_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]) {
 
   double a_rel = a / pba->a_today;
   double previous_time=0.;
@@ -10390,7 +10387,7 @@ double twoD_pixel(struct background *pba,
   int i;
 
   /*--> smooth bins case */
-  if (pba->smooth_pixels_gdm == _TRUE_) {
+  if (pba->smooth_bins_gdm == _TRUE_) {
     double timetable[pba->time_bins_num_gdm];  //stores the stitching times
     double timeratios[pba->time_bins_num_gdm]; //needed for the transition width awidth
     double awidth;
@@ -10403,7 +10400,7 @@ double twoD_pixel(struct background *pba,
       timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
     }
     //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
-    awidth=pba->time_transition_width_gdm/min(timeratios,pba->time_bins_num_gdm-1);
+    awidth=pba->time_transition_width_gdm/min_arr(timeratios,pba->time_bins_num_gdm-1);
     //stitch pieces together
     for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which stitching region the time a is
       if ((previous_time < a_rel) && (a_rel <= timetable[i])) {
