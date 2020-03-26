@@ -10338,171 +10338,130 @@ int perturb_rsa_idr_delta_and_theta(
     how to use those functions from the parameter files.
 */   
 
-//  the smooth cs2 and cv2 pixels in has_smooth_pixels_fld
-double c2_piece(double lnap, double lnkp, double c11, double c12, double c21, double c22 ){
+//  the smooth cs2 and cv2 pixels in smooth_pixels_gdm
+double c2_piece(double lnap,
+                double lnkp,
+                double c11,
+                double c12,
+                double c21,
+                double c22 ) {
   return (c11 + c12 + c21 + c22 + (-c11 - c12 + c21 + c22)*erf(lnkp) 
           + erf(lnap)*(-c11 + c12 - c21 + c22 + 
-                (c11 - c12 - c21 + c22)*erf(lnkp)))/4.;
+                       (c11 - c12 - c21 + c22)*erf(lnkp)))/4.;
 }
 
 // use this function only for the case pixel_params_fluid. It calculates either cs2 or cv2 for the pixel case.
-double twoD_pixel(struct background *pba, double a , double k, double c_values_fld[_MAX_NUMBER_OF_K_PIXELS_][_MAX_NUMBER_OF_TIME_PIXELS_]) {
+double twoD_pixel(struct background *pba,
+                  double a,
+                  double k,
+                  double c_values_gdm[_MAX_NUMBER_OF_K_PIXELS_][_MAX_NUMBER_OF_TIME_PIXELS_]) {
 
-      double a_rel = a / pba->a_today;
-      double previous_time=0.;
-      double previous_k=0.;
-      double twoD=0;
-      int i,j;
+  double a_rel = a / pba->a_today;
+  double previous_time=0.;
+  double previous_k=0.;
+  double twoD=0;
+  int i,j;
 
-/*-->The smooth pixel case */
-        if(pba->has_smooth_pixels_fld == _TRUE_){ 
-             double timetable[pba->time_pixel_num_fld];  //stores the stitching times
-             double timeratios[pba->time_pixel_num_fld]; //needed for the transition width awidth
-             double ktable[pba->k_pixel_num_fld];        //stores the stitching scales
-             double kratios[pba->k_pixel_num_fld];       //needed for the transition width kwidth
-             double awidth, kwidth;
-             double lnap, lnkp; // ln((a/ atrans)^awidth), the arguments of the error function
+  /*--> smooth bins case */
+  if (pba->smooth_pixels_gdm == _TRUE_) { 
+    double timetable[pba->time_bins_num_gdm];  //stores the stitching times
+    double timeratios[pba->time_bins_num_gdm]; //needed for the transition width awidth
+    double ktable[pba->k_pixel_num_fld];        //stores the stitching scales
+    double kratios[pba->k_pixel_num_fld];       //needed for the transition width kwidth
+    double awidth, kwidth;
+    double lnap, lnkp; // ln((a/ atrans)^awidth), the arguments of the error function
     
-                //calculate the geometric mean of pixel centers (=algebraic mean for lna)
-                //because w_piece and rho_piece are stitched together at those times.
-             for (i=0; i < pba->time_pixel_num_fld -1; i++) { 
-                 timetable[i]= sqrt(pba->time_values_fld[i]*pba->time_values_fld[i+1]);
-                 timetable[pba->time_pixel_num_fld-2]=pba->time_values_fld[pba->time_pixel_num_fld-1]; //replace the last entry by the final bin end
-                 timeratios[i]=log(timetable[i]/pba->time_values_fld[i]);
-             }
-             for (j=0; j<pba->k_pixel_num_fld-1; j++) {
-                 ktable[j]= sqrt(pba->k_values_fld[j]*pba->k_values_fld[j+1]);
-                 ktable[pba->k_pixel_num_fld-2]=pba->k_values_fld[pba->k_pixel_num_fld-1]; //replace the last entry by the final bin end
-                 kratios[j]=log(ktable[j]/pba->k_values_fld[j]);
-             }  
-                  //determine the transition width using the smallest logarithmic bin width and the external fudge parameter transition_width_time_fld
-             awidth=pba->transition_width_time_fld/min(timeratios,pba->time_pixel_num_fld-1); 
-             kwidth=pba->transition_width_time_fld/min(kratios,pba->k_pixel_num_fld-1); 
-
-                  //stitch pieces together
-             for (j=0; j<pba->k_pixel_num_fld-1; j++) {         //check in which stitching region the scale k is
-               for (i=0; i < pba->time_pixel_num_fld -1; i++) { //check in which stitching region the time a is 
-                  if((previous_k < k) && (k <= ktable[j])){
-                    if( (previous_time < a_rel) && (a_rel <= timetable[i])  ){
-                       lnap= awidth*log(a_rel/pba->time_values_fld[i]);
-                       lnkp= kwidth*log(k/pba->k_values_fld[j]);
-                        // the cx1 is earlier than cx2. And c1x is at smaller k than c2x.
-                       twoD = c2_piece(lnap,lnkp, 
-                                    c_values_fld[j][i], c_values_fld[j][i+1], 
-                                    c_values_fld[j+1][i], c_values_fld[j+1][i+1]) ;
-                       j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
-                       break;                  //this breaks out of the time-loop only (i-loop)
-                    }
-                    else previous_time = timetable[i];
-                   }  
-                   else previous_k = ktable[j];
-                     
-               }
-             }
-             
+    //calculate the geometric mean of pixel centers (=algebraic mean for lna)
+    //because w_piece and rho_piece are stitched together at those times.
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
+      timetable[i]= sqrt(pba->time_values_gdm[i]*pba->time_values_gdm[i+1]);
+      timetable[pba->time_bins_num_gdm-2]=pba->time_values_gdm[pba->time_bins_num_gdm-1]; //replace the last entry by the final bin end
+      timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
+    }
+    for (j=0; j<pba->k_pixel_num_fld-1; j++) {
+      ktable[j]= sqrt(pba->k_values_fld[j]*pba->k_values_fld[j+1]);
+      ktable[pba->k_pixel_num_fld-2]=pba->k_values_fld[pba->k_pixel_num_fld-1]; //replace the last entry by the final bin end
+      kratios[j]=log(ktable[j]/pba->k_values_fld[j]);
+    }  
+    //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
+    awidth=pba->time_transition_width_gdm/min(timeratios,pba->time_bins_num_gdm-1); 
+    kwidth=pba->time_transition_width_gdm/min(kratios,pba->k_pixel_num_fld-1); 
+    //stitch pieces together
+    for (j=0; j<pba->k_pixel_num_fld-1; j++) { //check in which stitching region the scale k is
+      for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which stitching region the time a is 
+        if((previous_k < k) && (k <= ktable[j])){
+          if( (previous_time < a_rel) && (a_rel <= timetable[i])  ){
+            lnap= awidth*log(a_rel/pba->time_values_gdm[i]);
+            lnkp= kwidth*log(k/pba->k_values_fld[j]);
+            // the cx1 is earlier than cx2. And c1x is at smaller k than c2x.
+            twoD = c2_piece(lnap,lnkp, 
+                            c_values_gdm[j][i], c_values_gdm[j][i+1], 
+                            c_values_gdm[j+1][i], c_values_gdm[j+1][i+1]) ;
+            j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
+            break;                  //this breaks out of the time-loop only (i-loop)
+          }
+          else {
+            previous_time = timetable[i];
+          }
+        }  
+        else {
+          previous_k = ktable[j];
         }
-    
-    
-    
-/*-->The sharp pixel case */      
-      else{
-          for (j=0; j<pba->k_pixel_num_fld; j++) {        
-            for (i=0; i < pba->time_pixel_num_fld; i++) { //MBK check in which pixel a and k is
-                if( (previous_k < k) && (k <= pba->k_values_fld[j])  ){                       
-                  if( (previous_time < a_rel) && (a_rel <= pba->time_values_fld[i]) ){         
-                       // printf("k_pixel_num_fld= %i, k_values_fld[j]=%e, k= %e \n", pba->k_pixel_num_fld, pba->k_values_fld[j],k); 
-                        twoD = c_values_fld[j][i];
-                        j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
-                        break;                  //this breaks out of the time-loop only (i-loop)
-                  }
-                  else previous_time = pba->time_values_fld[i];      
-                }
-                else previous_k = pba->k_values_fld[j];
-            }
-          }  
       }
-
-    return twoD;
     }
-
-
-//MBK add here the definitions of GDM sound speed and viscosity
-double cs2_fld_of_a_and_k(struct background *pba,
-               double a,
-               double k) {
-  double cs2=0.;
-  if(pba->has_fld == _TRUE_){
-//  double a_rel = a / pba->a_today;
-    
-    /*The constant constant case */
-   if(pba->parametrization_fld == constant_params_fld){
-      cs2 = pba->cs2_fld;
-    }
-
-    /*The warm case */ 
-    if(pba->parametrization_fld == warm_params_fld){
-      double a_rel = a / pba->a_today;
-      double lna = log(a_rel);
-      double n=pba->n0_fld;
-      double cs20=pba->cs2_fld;
-      if(a<=pba->a_wdm_fld){
-       cs2 = pba->cs2_ini_fld;
-       }
-      else cs2 =cs20/exp(lna*n); 
-    }
-
-    /*The axion constant case, m24_axion_fld measured in units of 10^(-24)eV */ // hbar*c = 0.19732697 10^(-6) 3.2408 10^(-23) eV * Mpc = 6.39497*10^-30 eV * Mpc.
-    if(pba->parametrization_fld == axion_params_fld){
- //     double a_rel = a / pba->a_today;
-      double a_rel = 1.; // MBK just for testing
-      cs2 = pow((k/(2*a_rel*pba->m24_axion_fld * 1.56373839e5)),2.);
-    }
-
-     /*The pixel case */ 
-    if(pba->parametrization_fld == pixel_params_fld){
-      cs2=twoD_pixel(pba, a, k, pba->cs2_values_fld);
-    } 
   }
-  return  cs2;
+  /*--> sharp bins case */      
+  else {
+    for (j=0; j<pba->k_pixel_num_fld; j++) {        
+      for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which pixel a and k is
+        if((previous_k < k) && (k <= pba->k_values_fld[j])) {
+          if((previous_time < a_rel) && (a_rel <= pba->time_values_gdm[i])) {
+            twoD = c_values_gdm[j][i];
+            j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
+            break;                  //this breaks out of the time-loop only (i-loop)
+          }
+          else {
+            previous_time = pba->time_values_gdm[i];
+          }       
+        }
+        else {
+          previous_k = pba->k_values_fld[j];
+        }
+      }
+    }  
+  }
+
+  return twoD;
 }
 
 
-// cv2_fld_of_a_and_k is for pixel_params_fld is an exact copy of cs2_fld_of_a_and_k. So there should be a nicer way to write down both functions.
+// Add here the definitions of GDM sound speed and viscosity
+double cs2_gdm_of_a_and_k(struct background *pba,
+                          double a,
+                          double k) {
+  double cs2=0.;
 
-double cv2_fld_of_a_and_k(struct background *pba,
+  /* Time-only binned GDM case */ 
+  if (pba->type_gdm == time_only_bins_gdm) {
+      cs2=twoD_pixel(pba, a, k, pba->cs2_values_gdm);
+  } 
+
+  return  cs2;
+
+}
+
+
+// cv2_gdm_of_a_and_k is for time_only_bins_gdm is an exact copy of cs2_gdm_of_a_and_k. So there should be a nicer way to write down both functions.
+double cv2_gdm_of_a_and_k(struct background *pba,
                double a,
                double k) {
   double cv2 =0;
-  if(pba->has_fld == _TRUE_){
-//  double a_rel = a / pba->a_today;
 
-    /*The constant constant case */
-    if(pba->parametrization_fld == constant_params_fld){
-      cv2 = pba->cv2_fld;
-    }
-
-    /*The warm case */
-    if(pba->parametrization_fld == warm_params_fld){
-      double a_rel = a / pba->a_today;
-      double lna = log(a_rel);
-      double n=pba->n0_fld;
-      double cv20=pba->cv2_fld;
-      if(a<=pba->a_wdm_fld){
-       cv2 = pba->cv2_ini_fld;
-       }
-      else cv2 =cv20/exp(lna*n); 
-    }
-
-    /*The axion constant case */
-    if(pba->parametrization_fld == axion_params_fld){
-     cv2 = 0.;
-    }
-
-
-     /*The pixel case */ 
-    if(pba->parametrization_fld == pixel_params_fld){
-    cv2=twoD_pixel(pba, a, k, pba->cv2_values_fld);
-    }
+  /* Time-only binned GDM case */ 
+  if (pba->type_gdm == time_only_bins_gdm) {
+    cv2 = twoD_pixel(pba, a, k, pba->cv2_values_gdm);
   }
+
   return  cv2;
+
 }
