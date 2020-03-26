@@ -510,14 +510,13 @@ int perturb_init(
       printf("Computing sources\n");
   }
 
-  /* GDM_CLASS: test removed because not exactly true; cf. page 10 of the theory paper
+  /* GDM_CLASS: can be removed because not exactly true; cf. page 10 of the theory paper
                 1605.00649 : "We adopt the synchronous gauge by setting Psi=Xi=0. This 
                 gauge has a residual gauge mode which is set to zero by discarding 
-                decaying initial conditions."
+                decaying initial conditions." */
   class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_),
              ppt->error_message,
              "In the synchronous gauge, it is not self-consistent to assume no CDM: the later is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or switch to newtonian gauge");
-  */
 
   class_test ((ppr->tight_coupling_approximation < first_order_MB) ||
               (ppr->tight_coupling_approximation > compromise_CLASS),
@@ -3144,7 +3143,7 @@ int perturb_prepare_k_output(struct background * pba,
       /* Cold dark matter */
       class_store_columntitle(ppt->scalar_titles,"delta_cdm",pba->has_cdm);
       class_store_columntitle(ppt->scalar_titles,"theta_cdm",pba->has_cdm);
-      /* GDM_CLASS: added gdm fluid */
+      /* GDM_CLASS: added gdm fluid variables */
       class_store_columntitle(ppt->scalar_titles,"delta_gdm",pba->has_gdm);
       class_store_columntitle(ppt->scalar_titles,"theta_gdm",pba->has_gdm);
       class_store_columntitle(ppt->scalar_titles,"shear_gdm",pba->has_gdm);
@@ -4213,9 +4212,9 @@ int perturb_vector_init(
         ppv->y[ppv->index_pt_theta_gdm] =
           ppw->pv->y[ppw->pv->index_pt_theta_gdm];
 
-        if (ppt->dynamic_shear_gdm == _TRUE_) {   
+        if (ppt->dynamic_shear_gdm == _TRUE_) {
           ppv->y[ppv->index_pt_shear_gdm] =
-          ppw->pv->y[ppw->pv->index_pt_shear_gdm];  
+          ppw->pv->y[ppw->pv->index_pt_shear_gdm];
         }
 
       }
@@ -5176,7 +5175,7 @@ int perturb_initial_conditions(struct precision * ppr,
     }
 
     /* GDM_CLASS
-    /* this has impliciations for how the Einstein equations are written using the
+    /* this has implications for how the Einstein equations are written using the
        radiatio/matter ratio rho_m_over_rho_r. The fld is supposed to be close to 
        cdm regarding the background: |w| << 1 */
     if (pba->has_gdm == _TRUE_) {
@@ -5232,9 +5231,6 @@ int perturb_initial_conditions(struct precision * ppr,
     /* f_b = Omega_b(t_i) / Omega_m(t_i) */
     fracb = ppw->pvecback[pba->index_bg_rho_b]/rho_m;
 
-    /* f_cdm = Omega_cdm(t_i) / Omega_m(t_i) */
-    fraccdm = 1.-fracb;
-
     /* GDM_CLASS */
     /* initial conditions need to be modified in case of initially time varying w.
        Here we assume that w_ini=const and ca2_ini=w_ini.
@@ -5249,16 +5245,22 @@ int perturb_initial_conditions(struct precision * ppr,
       ca2 = ppw->pvecback[pba->index_bg_ca2_gdm];
       class_test(w != ca2,
                  ppt->error_message,
-                 "Stop because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
+                 "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
       cs2 = cs2_gdm_of_a_and_k(pba,a,k);
       cv2 = cv2_gdm_of_a_and_k(pba,a,k);
     }  
-    /* some other shortcut notation */
+    /* some other shortcut notations */
     csTerm4 = 4. + 3.*cs2 - 6.*w;
     csTerm1 = 1. + 2.*cs2 - 3.*w;
     RnuTerm = 15. + 4.*fracnu;
     RnuAltTerm = 5. + 4.*fracnu;
+    omtau = om*tau;
+    omk= om/k;
     /* END GDM_CLASS */
+
+    /* f_cdm = Omega_cdm(t_i) / Omega_m(t_i) */
+    // fraccdm = 1.-fracb; // GDM_CLASS
+    fraccdm = 1.-fracb-fracgdm; // GDM_CLASS
 
     /* Omega_m(t_i) / Omega_r(t_i) */
     rho_m_over_rho_r = rho_m/rho_r;
@@ -5273,8 +5275,6 @@ int perturb_initial_conditions(struct precision * ppr,
        a = [H(t_0)^2 Omega_m(t_0) a(t_0)^3 / 4] x [tau^2 + 4 tau / omega]
     */
     om = a*rho_m/sqrt(rho_r);
-    omtau = om*tau; // GDM_CLASS
-    omk= om/k; // GDM_CLASS
 
     /* (k tau)^2, (k tau)^3 */
     ktau_two=k*k*tau*tau;
@@ -5307,13 +5307,30 @@ int perturb_initial_conditions(struct precision * ppr,
          appear through the solution of Einstein equations and
          equations of motion. */
 
+      /* GDM_CLASS: spatial curvature s2_squared terms are not included when GDM is
+         requested, because they should be irrelevant at tau_ini ~ 0.001 for any sensible 
+         omega_k. All the terms still in there are left overs from the original class. 
+         Checked to be exactly 1. */
+
       /* photon density */
-      ppw->pv->y[ppw->pv->index_pt_delta_g] = - ktau_two/3. * (1.-om*tau/5.)
-        * ppr->curvature_ini * s2_squared;
+      if (pba->has_gdm == _TRUE_) { // GDM_CLASS
+        ppw->pv->y[ppw->pv->index_pt_delta_g] = - ktau_two/3.
+          * ppr->curvature_ini * s2_squared;
+      }
+      else {
+        ppw->pv->y[ppw->pv->index_pt_delta_g] = - ktau_two/3. * (1.-om*tau/5.)
+          * ppr->curvature_ini * s2_squared;
+      }
 
       /* photon velocity */
-      ppw->pv->y[ppw->pv->index_pt_theta_g] = - k*ktau_three/36. * (1.-3.*(1.+5.*fracb-fracnu)/20./(1.-fracnu)*om*tau)
+      if (pba->has_gdm == _TRUE_) { // GDM_CLASS
+        ppw->pv->y[ppw->pv->index_pt_theta_g] = - k*ktau_three/36.
         * ppr->curvature_ini * s2_squared;
+      }
+      else {
+        ppw->pv->y[ppw->pv->index_pt_theta_g] = - k*ktau_three/36. * (1.-3.*(1.+5.*fracb-fracnu)/20./(1.-fracnu)*om*tau)
+        * ppr->curvature_ini * s2_squared;
+      }
 
       /* tighly-coupled baryons */
       ppw->pv->y[ppw->pv->index_pt_delta_b] = 3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g]; /* baryon density */
@@ -5388,19 +5405,31 @@ int perturb_initial_conditions(struct precision * ppr,
 
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_) || (pba->has_idr == _TRUE_)) {
 
-        /* GDM_CLASS: removed the omega*tau terms and l3_ur */
+        /* GDM_CLASS: removed the omega*tau terms and l3_ur if GDM requested */
 
         delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* density of ultra-relativistic neutrinos/relics */
 
         /* velocity of ultra-relativistic neutrinos/relics */ //TBC
-        // theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; // GDM_CLASS
-        theta_ur = -(23.+4*fracnu)/36./RnuTerm*ktau_three*k * ppr->curvature_ini ; // GDM_CLASS
+        if (pba->has_gdm == _TRUE_) { // GDM_CLASS
+          theta_ur = -(23.+4*fracnu)/36./RnuTerm*ktau_three*k * ppr->curvature_ini ;
+        }
+        else {
+          theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared;
+        }
 
-        // shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0 // GDM_CLASS
-        shear_ur = 2./3./RnuTerm*ktau_two * ppr->curvature_ini; // GDM_CLASS
+        if (pba->has_gdm == _TRUE_) { // GDM_CLASS
+          shear_ur = 2./3./RnuTerm*ktau_two * ppr->curvature_ini;
+        }
+        else {
+          shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
+        }
 
-        // l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC // GDM_CLASS
-        l3_ur = 0.;
+        if (pba->has_gdm == _TRUE_) { // GDM_CLASS
+          l3_ur = 0.;
+        }
+        else {
+          l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
+        }
 
         if (pba->has_dr == _TRUE_) delta_dr = delta_ur;
       }
@@ -5408,8 +5437,12 @@ int perturb_initial_conditions(struct precision * ppr,
       /* synchronous metric perturbation eta */
       //eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)) /  s2_squared;
       //eta = ppr->curvature_ini * s2_squared * (1.-ktau_two/12./(15.+4.*fracnu)*(15.*s2_squared-10.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
-      // eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)); // GDM_CLASS
-      eta = ppr->curvature_ini * (1.0 - (5.+4.*fracnu)/(12.*RnuTerm)*ktau_two); // GDM_CLASS
+      if (pba->has_gdm == _TRUE_) { // GDM_CLASS
+        eta = ppr->curvature_ini * (1.0 - (5.+4.*fracnu)/(12.*RnuTerm)*ktau_two);
+      }
+      else {
+        eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
+      }
 
 
     }
@@ -5430,6 +5463,11 @@ int perturb_initial_conditions(struct precision * ppr,
       class_test((pba->has_idr == _TRUE_),
                  ppt->error_message,
                  "only adiabatic ic in presence of interacting dark radiation");
+
+      /* GDM_CLASS: new test */
+      class_test((pba->has_gdm == _TRUE_),
+                 ppt->error_message,
+                 "only adiabatic ic in presence of GDM");
 
       class_test(pba->has_cdm == _FALSE_,
                  ppt->error_message,
@@ -5458,6 +5496,11 @@ int perturb_initial_conditions(struct precision * ppr,
     /** - --> (b.3.) Baryon Isocurvature */
 
     if ((ppt->has_bi == _TRUE_) && (index_ic == ppt->index_ic_bi)) {
+
+      /* GDM_CLASS: new test */
+      class_test((pba->has_gdm == _TRUE_),
+                 ppt->error_message,
+                 "only adiabatic ic in presence of GDM");
 
       class_test((pba->has_idr == _TRUE_),
                  ppt->error_message,
@@ -5495,6 +5538,11 @@ int perturb_initial_conditions(struct precision * ppr,
                  ppt->error_message,
                  "not consistent to ask for NID in absence of ur or ncdm species!");
 
+      /* GDM_CLASS: new test */
+      class_test((pba->has_gdm == _TRUE_),
+                 ppt->error_message,
+                 "only adiabatic ic in presence of GDM");
+
       class_test((pba->has_idr == _TRUE_),
                  ppt->error_message,
                  "only adiabatic ic in presence of interacting dark radiation");
@@ -5526,6 +5574,11 @@ int perturb_initial_conditions(struct precision * ppr,
       class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_),
                  ppt->error_message,
                  "not consistent to ask for NIV in absence of ur or ncdm species!");
+
+      /* GDM_CLASS: new test */
+      class_test((pba->has_gdm == _TRUE_),
+                 ppt->error_message,
+                 "only adiabatic ic in presence of GDM");
 
       class_test((pba->has_idr == _TRUE_),
                  ppt->error_message,
@@ -5593,11 +5646,22 @@ int perturb_initial_conditions(struct precision * ppr,
       else
         delta_cdm=0.;
 
+      /* GDM_CLASS */
+      if (pba->has_gdm == _TRUE_){
+        delta_gdm = ppw->pv->y[ppw->pv->index_pt_delta_gdm];
+        theta_gdm = ppw->pv->y[ppw->pv->index_pt_theta_gdm];
+      }
+      else{
+        delta_gdm = 0.;
+        theta_gdm = 0.;
+      }
+      /* END GDM_CLASS */
+
       // note: if there are no neutrinos, fracnu, delta_ur and theta_ur below will consistently be zero.
 
-      delta_tot = (fracg*ppw->pv->y[ppw->pv->index_pt_delta_g]+fracnu*delta_ur+rho_m_over_rho_r*(fracb*ppw->pv->y[ppw->pv->index_pt_delta_b]+fraccdm*delta_cdm))/(1.+rho_m_over_rho_r);
+      delta_tot = (fracg*ppw->pv->y[ppw->pv->index_pt_delta_g]+fracnu*delta_ur+rho_m_over_rho_r*(fracb*ppw->pv->y[ppw->pv->index_pt_delta_b]+fraccdm*delta_cdm+ fracgdm*delta_gdm))/(1.+rho_m_over_rho_r); // GDM_CLASS: additional gdm term
 
-      velocity_tot = ((4./3.)*(fracg*ppw->pv->y[ppw->pv->index_pt_theta_g]+fracnu*theta_ur) + rho_m_over_rho_r*fracb*ppw->pv->y[ppw->pv->index_pt_theta_b])/(1.+rho_m_over_rho_r);
+      velocity_tot = ((4./3.)*(fracg*ppw->pv->y[ppw->pv->index_pt_theta_g]+fracnu*theta_ur) + rho_m_over_rho_r*fracb*ppw->pv->y[ppw->pv->index_pt_theta_b] + rho_m_over_rho_r*fracgdm*(1.+w)*theta_gdm)/(1.+rho_m_over_rho_r); // GDM_CLASS: additional gdm term
 
       alpha = (eta + 3./2.*a_prime_over_a*a_prime_over_a/k/k/s2_squared*(delta_tot + 3.*a_prime_over_a/k/k*velocity_tot))/a_prime_over_a;
 
@@ -5612,6 +5676,12 @@ int perturb_initial_conditions(struct precision * ppr,
       if (pba->has_cdm == _TRUE_) {
         ppw->pv->y[ppw->pv->index_pt_delta_cdm] -= 3.*a_prime_over_a*alpha;
         ppw->pv->y[ppw->pv->index_pt_theta_cdm] = k*k*alpha;
+      }
+
+      /* GDM_CLASS: gdm fluid */
+      if (pba->has_gdm == _TRUE_) {
+        ppw->pv->y[ppw->pv->index_pt_delta_gdm] -= 3*(1.+w)*a_prime_over_a*alpha;
+        ppw->pv->y[ppw->pv->index_pt_theta_gdm] += k*k*alpha;
       }
 
       if (pba->has_idm_dr == _TRUE_){
