@@ -804,8 +804,8 @@ int input_read_parameters(
     if (flag1 == _TRUE_) {
       /* Binned time-dependent-only GDM */
       if (strcmp(string1,"time_only_bins") == 0) {
-        pba->type_gdm=time_only_bins_gdm;
-        if (pba->background_verbose>0) {
+        pba->type_gdm = time_only_bins_gdm;
+        if (pba->background_verbose > 0) {
           printf("Using a binned time-dependent-only GDM model\n");
         }
       }
@@ -823,7 +823,7 @@ int input_read_parameters(
       }
     }
   
-    /* Flag for dynamic shear and algebraic non-adiabatic pressure */
+    /* Flag for dynamic shear and algebraic non-adiabatic pressure (no by default) */
     class_call(parser_read_string(pfc,
                                   "dynamic_shear_gdm",
                                   &(string1),
@@ -836,9 +836,9 @@ int input_read_parameters(
     }
 
     /* Binned time-dependent-only GDM */
-    if (pba->type_gdm==time_only_bins_gdm){
+    if (pba->type_gdm == time_only_bins_gdm) {
       
-      // User decides if they want smooth transition between bins (yes by default)
+      // User decides if they want smooth transition between bins (no by default)
       class_call(parser_read_string(pfc,
                                     "smooth_bins_gdm",
                                     &(string1),
@@ -1631,6 +1631,7 @@ int input_read_parameters(
   if (flag1 == _TRUE_) {
 
     if ((strstr(string1,"HYREC") != NULL) || (strstr(string1,"hyrec") != NULL) || (strstr(string1,"HyRec") != NULL)) {
+      class_test(pba->Omega0_gdm != 0., errmsg, "Cannot use HyRec with a GDM fluid"); // GDM_CLASS
       pth->recombination = hyrec;
     }
 
@@ -3373,7 +3374,7 @@ int input_default_params(
   /* GDM_CLASS: default values of new GDM variables */ 
   pba->Omega0_gdm = 0.;
   pba->type_gdm=time_only_bins_gdm;
-  pba->smooth_bins_gdm = _TRUE_;
+  pba->smooth_bins_gdm = _FALSE_;
   pba->time_transition_width_gdm = 5.;
   /* END GDM_CLASS */
   pba->Omega0_cdm = 0.12038/pow(pba->h,2);
@@ -3457,7 +3458,7 @@ int input_default_params(
   /** - perturbation structure */
 
   /* GDM_CLASS: default values of new GDM variables */ 
-  ppt->dynamic_shear_gdm = _TRUE_;
+  ppt->dynamic_shear_gdm = _FALSE_;
   /* END GDM_CLASS */
 
   ppt->has_cl_cmb_temperature = _FALSE_;

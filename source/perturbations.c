@@ -5180,8 +5180,14 @@ int perturb_initial_conditions(struct precision * ppr,
        radiatio/matter ratio rho_m_over_rho_r. The fld is supposed to be close to 
        cdm regarding the background: |w| << 1 */
     if (pba->has_gdm == _TRUE_) {
+      /* This next test ensures that integration starts early enough for the
+         simplified GDM initial conditions to be valid */
+      class_test(ppr->start_small_k_at_tau_c_over_tau_h <= 1e-6,
+                 ppt->error_message,
+                 "The precision parameter 'start_small_k_at_tau_c_over_tau_h' is too low (= %e) for GDM, use a value <= 1e-6.");
       rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
     }
+    /* END GDM_CLASS */
 
     if (pba->has_idm_dr == _TRUE_) {
       rho_m += ppw->pvecback[pba->index_bg_rho_idm_dr];
