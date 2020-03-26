@@ -10357,7 +10357,7 @@ int perturb_rsa_idr_delta_and_theta(
 ///////////////////////////////////////////////////
 /* GDM_CLASS : new set of GDM-specific functions */
 ///////////////////////////////////////////////////
-/** Here come the functions cs2_gdm_of_a_and_k and cv2_gdm_of_a_and_k that 
+/** Here come the functions cs2_gdm_of_a_and_k and cv2_gdm_of_a_and_k that
     calculate the sound speed and viscosity for different GDM parametrisations.
     And some additional functions needed. See the comments in GDM_explanatory.ini for
     how to use those functions from the parameter files.
@@ -10365,37 +10365,28 @@ int perturb_rsa_idr_delta_and_theta(
 
 //  the smooth cs2 and cv2 pixels in smooth_pixels_gdm
 double c2_piece(double lnap,
-                double lnkp,
                 double c11,
-                double c12,
-                double c21,
-                double c22 ) {
-  return (c11 + c12 + c21 + c22 + (-c11 - c12 + c21 + c22)*erf(lnkp) 
-          + erf(lnap)*(-c11 + c12 - c21 + c22 + 
-                       (c11 - c12 - c21 + c22)*erf(lnkp)))/4.;
+                double c12) {
+  return (c11 + c12 + erf(lnap)*(c12 - c11))/2.;
 }
 
 // use this function only for the case pixel_params_fluid. It calculates either cs2 or cv2 for the pixel case.
 double twoD_pixel(struct background *pba,
                   double a,
-                  double k,
-                  double c_values_gdm[_MAX_NUMBER_OF_K_PIXELS_][_MAX_NUMBER_OF_TIME_PIXELS_]) {
+                  double k, // unused dummy argument
+                  double c_values_gdm[_MAX_NUMBER_OF_TIME_PIXELS_]) {
 
   double a_rel = a / pba->a_today;
   double previous_time=0.;
-  double previous_k=0.;
   double twoD=0;
-  int i,j;
+  int i;
 
   /*--> smooth bins case */
   if (pba->smooth_pixels_gdm == _TRUE_) { 
     double timetable[pba->time_bins_num_gdm];  //stores the stitching times
     double timeratios[pba->time_bins_num_gdm]; //needed for the transition width awidth
-    double ktable[pba->k_pixel_num_fld];        //stores the stitching scales
-    double kratios[pba->k_pixel_num_fld];       //needed for the transition width kwidth
-    double awidth, kwidth;
-    double lnap, lnkp; // ln((a/ atrans)^awidth), the arguments of the error function
-    
+    double awidth;
+    double lnap; // ln((a/ atrans)^awidth), the arguments of the error function
     //calculate the geometric mean of pixel centers (=algebraic mean for lna)
     //because w_piece and rho_piece are stitched together at those times.
     for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
@@ -10403,60 +10394,38 @@ double twoD_pixel(struct background *pba,
       timetable[pba->time_bins_num_gdm-2]=pba->time_values_gdm[pba->time_bins_num_gdm-1]; //replace the last entry by the final bin end
       timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
     }
-    for (j=0; j<pba->k_pixel_num_fld-1; j++) {
-      ktable[j]= sqrt(pba->k_values_fld[j]*pba->k_values_fld[j+1]);
-      ktable[pba->k_pixel_num_fld-2]=pba->k_values_fld[pba->k_pixel_num_fld-1]; //replace the last entry by the final bin end
-      kratios[j]=log(ktable[j]/pba->k_values_fld[j]);
-    }  
     //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
     awidth=pba->time_transition_width_gdm/min(timeratios,pba->time_bins_num_gdm-1); 
-    kwidth=pba->time_transition_width_gdm/min(kratios,pba->k_pixel_num_fld-1); 
     //stitch pieces together
-    for (j=0; j<pba->k_pixel_num_fld-1; j++) { //check in which stitching region the scale k is
-      for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which stitching region the time a is 
-        if((previous_k < k) && (k <= ktable[j])){
-          if( (previous_time < a_rel) && (a_rel <= timetable[i])  ){
-            lnap= awidth*log(a_rel/pba->time_values_gdm[i]);
-            lnkp= kwidth*log(k/pba->k_values_fld[j]);
-            // the cx1 is earlier than cx2. And c1x is at smaller k than c2x.
-            twoD = c2_piece(lnap,lnkp, 
-                            c_values_gdm[j][i], c_values_gdm[j][i+1], 
-                            c_values_gdm[j+1][i], c_values_gdm[j+1][i+1]) ;
-            j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
-            break;                  //this breaks out of the time-loop only (i-loop)
-          }
-          else {
-            previous_time = timetable[i];
-          }
-        }  
-        else {
-          previous_k = ktable[j];
-        }
+    for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which stitching region the time a is 
+      if ((previous_time < a_rel) && (a_rel <= timetable[i])) {
+        lnap = awidth*log(a_rel/pba->time_values_gdm[i]);
+        // the cx1 is earlier than cx2. And c1x is at smaller k than c2x.
+        twoD = c2_piece(lnap, 
+                        c_values_gdm[i],
+                        c_values_gdm[i+1]);
+        break; //this breaks out of the time-loop only (i-loop)
+      }
+      else {
+        previous_time = timetable[i];
       }
     }
   }
   /*--> sharp bins case */      
   else {
-    for (j=0; j<pba->k_pixel_num_fld; j++) {        
-      for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which pixel a and k is
-        if((previous_k < k) && (k <= pba->k_values_fld[j])) {
-          if((previous_time < a_rel) && (a_rel <= pba->time_values_gdm[i])) {
-            twoD = c_values_gdm[j][i];
-            j=pba->k_pixel_num_fld; // this breaks out of the k-loop (j-loop)
-            break;                  //this breaks out of the time-loop only (i-loop)
-          }
-          else {
-            previous_time = pba->time_values_gdm[i];
-          }       
-        }
-        else {
-          previous_k = pba->k_values_fld[j];
-        }
+    for (i=0; i < pba->time_bins_num_gdm; i++) { // check in which pixel a is
+      if((previous_time < a_rel) && (a_rel <= pba->time_values_gdm[i])) {
+        twoD = c_values_gdm[i];
+        break;                  //this breaks out of the time-loop only (i-loop)
       }
+      else {
+        previous_time = pba->time_values_gdm[i];
+      }       
     }  
   }
 
   return twoD;
+
 }
 
 

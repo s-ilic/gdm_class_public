@@ -2745,7 +2745,6 @@ double min_arr(const double *arr,
 
 /* Equation for w in given time bin when smoothing is on */
 double w_piece(double lnap,
-               double awidth,
                double w1,
                double w2) {
   return w1/2. + w2/2. + ((w2 - w1)*erf(lnap))/2.;
@@ -2782,7 +2781,6 @@ double oneD_pixel(struct background *pba,
     double timeratios[pba->time_bins_num_gdm]; //stitching times over bin edge times
     double awidth; // transition width of erf
     double lnap; // ln((a/ atrans)^awidth), time argument of functions w_piece, ca2_piece, rho_piece
-
     //calculate the geometric mean of pixel centers (=algebraic mean for lna)
     //because w_piece and rho_piece are stitched together at those times.
     for (i=0; i < pba->time_bins_num_gdm -1; i++) { 
@@ -2790,10 +2788,8 @@ double oneD_pixel(struct background *pba,
       timetable[pba->time_bins_num_gdm-2]=pba->time_values_gdm[pba->time_bins_num_gdm-1]; //replace the last entry by the final bin end
       timeratios[i]=log(timetable[i]/pba->time_values_gdm[i]);
     }
-    
     //determine the transition width using the smallest logarithmic bin width and the external fudge parameter time_transition_width_gdm
     awidth=pba->time_transition_width_gdm/min_arr(timeratios,pba->time_bins_num_gdm-1);
-
     //stitch pieces together
     for (i=0; i < pba->time_bins_num_gdm -1; i++) { //check in which bin the time a is 
       if((previous_time < a_rel) && (a_rel <= timetable[i])) {

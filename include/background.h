@@ -602,7 +602,6 @@ extern "C" {
 
   double w_piece(
                double lnap,
-               double awidth,
                double w1, 
                double w2
                );
