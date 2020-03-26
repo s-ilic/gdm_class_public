@@ -5126,7 +5126,7 @@ int perturb_initial_conditions(struct precision * ppr,
   double a,a_prime_over_a;
   double w_fld,dw_over_da_fld,integral_fld;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l3_ur=0.,eta=0.,delta_cdm=0.,alpha, alpha_prime;
-  double delta_gdm=0.,theta_gdm=0.,w=0,cs2=0.,ca2=0.,cv2=0.; // GDM_CLASS 
+  double delta_gdm=0.,theta_gdm=0.,w_gdm=0,cs2_gdm=0.,ca2_gdm=0.,cv2_gdm=0.; // GDM_CLASS 
   double delta_dr=0;
   double q,epsilon,k2;
   int index_q,n_ncdm,idx;
@@ -5241,17 +5241,17 @@ int perturb_initial_conditions(struct precision * ppr,
     fracgdm = 0;
     if (pba->has_gdm == _TRUE_) {
       fracgdm = ppw->pvecback[pba->index_bg_rho_gdm]/rho_m;
-      w = ppw->pvecback[pba->index_bg_w_gdm];
-      ca2 = ppw->pvecback[pba->index_bg_ca2_gdm];
+      w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
+      ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
       class_test(w != ca2,
                  ppt->error_message,
                  "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
-      cs2 = cs2_gdm_of_a_and_k(pba,a,k);
-      cv2 = cv2_gdm_of_a_and_k(pba,a,k);
+      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
     }  
     /* some other shortcut notations */
-    csTerm4 = 4. + 3.*cs2 - 6.*w;
-    csTerm1 = 1. + 2.*cs2 - 3.*w;
+    csTerm4 = 4. + 3.*cs2_gdm - 6.*w_gdm;
+    csTerm1 = 1. + 2.*cs2_gdm - 3.*w_gdm;
     RnuTerm = 15. + 4.*fracnu;
     RnuAltTerm = 5. + 4.*fracnu;
     omtau = om*tau;
@@ -5347,13 +5347,14 @@ int perturb_initial_conditions(struct precision * ppr,
          omega tau << 1 . */
       if (pba->has_gdm == _TRUE_) {
         /* initial conditions need to be modified in case of time varying w*/
-        ppw->pv->y[ppw->pv->index_pt_delta_gdm] =  (-(4.-3.*cs2)*(1.+w)/4./csTerm4 +   
-                                                  12.*cv2*(cs2-w)/csTerm4/RnuTerm)*ktau_two* ppr->curvature_ini;  
-        ppw->pv->y[ppw->pv->index_pt_theta_gdm] = -(cs2/4./csTerm4 +
-                                                  4.*cv2*(2.+3.*(cs2-w))/3./
-                                                   (1.+w)/csTerm4/RnuTerm)*ktau_three*k* ppr->curvature_ini ; 
+        ppw->pv->y[ppw->pv->index_pt_delta_gdm] =  (-(4.-3.*cs2_gdm)*(1.+w_gdm)/4./
+          csTerm4 + 12.*cv2_gdm*(cs2_gdm-w_gdm)/csTerm4/RnuTerm)
+          *ktau_two* ppr->curvature_ini;  
+        ppw->pv->y[ppw->pv->index_pt_theta_gdm] = -(cs2_gdm/4./csTerm4 + 4.*cv2_gdm*(2.+3.
+          *(cs2_gdm-w_gdm))/3./(1.+w_gdm)/csTerm4/RnuTerm)
+          *ktau_three*k* ppr->curvature_ini ; 
         if (ppt->dynamic_shear_gdm == _TRUE_) {
-          ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 8./3.*cv2/(1.+w)/RnuTerm*ktau_two*ppr->curvature_ini;  /*from Hu's GDM paper, we only need initial conditions in case the fluid shear is dynamical */
+          ppw->pv->y[ppw->pv->index_pt_shear_gdm] = 8./3.*cv2_gdm/(1.+w_gdm)/RnuTerm*ktau_two*ppr->curvature_ini;  /*from Hu's GDM paper, we only need initial conditions in case the fluid shear is dynamical */
         }
       }
       /* END GDM_CLASS
@@ -5661,7 +5662,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
       delta_tot = (fracg*ppw->pv->y[ppw->pv->index_pt_delta_g]+fracnu*delta_ur+rho_m_over_rho_r*(fracb*ppw->pv->y[ppw->pv->index_pt_delta_b]+fraccdm*delta_cdm+ fracgdm*delta_gdm))/(1.+rho_m_over_rho_r); // GDM_CLASS: additional gdm term
 
-      velocity_tot = ((4./3.)*(fracg*ppw->pv->y[ppw->pv->index_pt_theta_g]+fracnu*theta_ur) + rho_m_over_rho_r*fracb*ppw->pv->y[ppw->pv->index_pt_theta_b] + rho_m_over_rho_r*fracgdm*(1.+w)*theta_gdm)/(1.+rho_m_over_rho_r); // GDM_CLASS: additional gdm term
+      velocity_tot = ((4./3.)*(fracg*ppw->pv->y[ppw->pv->index_pt_theta_g]+fracnu*theta_ur) + rho_m_over_rho_r*fracb*ppw->pv->y[ppw->pv->index_pt_theta_b] + rho_m_over_rho_r*fracgdm*(1.+w_gdm)*theta_gdm)/(1.+rho_m_over_rho_r); // GDM_CLASS: additional gdm term
 
       alpha = (eta + 3./2.*a_prime_over_a*a_prime_over_a/k/k/s2_squared*(delta_tot + 3.*a_prime_over_a/k/k*velocity_tot))/a_prime_over_a;
 
@@ -5680,7 +5681,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
       /* GDM_CLASS: gdm fluid */
       if (pba->has_gdm == _TRUE_) {
-        ppw->pv->y[ppw->pv->index_pt_delta_gdm] -= 3*(1.+w)*a_prime_over_a*alpha;
+        ppw->pv->y[ppw->pv->index_pt_delta_gdm] -= 3*(1.+w_gdm)*a_prime_over_a*alpha;
         ppw->pv->y[ppw->pv->index_pt_theta_gdm] += k*k*alpha;
       }
 
