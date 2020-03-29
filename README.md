@@ -1,39 +1,18 @@
-CLASS: Cosmic Linear Anisotropy Solving System  {#mainpage}
-==============================================
+GDM_CLASS: an implementation of the Generalized Dark Matter model inside the Cosmic Linear Anisotropy Solving System
+====================================================================================================================
 
-Authors: Julien Lesgourgues and Thomas Tram
-
+Original CLASS authors: Julien Lesgourgues and Thomas Tram
 with several major inputs from other people, especially Benjamin
 Audren, Simon Prunet, Jesus Torrado, Miguel Zumalacarregui, Francesco
 Montanari, etc.
 
-For download and information, see http://class-code.net
+GDM implementation authors: Stéphane Ilic, Michael Kopp, Daniel B. Thomas
 
 
-Compiling CLASS and getting started
------------------------------------
+Compiling GDM_CLASS and getting started
+---------------------------------------
 
-(the information below can also be found on the webpage, just below
-the download button)
-
-Download the code from the webpage and unpack the archive (tar -zxvf
-class_vx.y.z.tar.gz), or clone it from
-https://github.com/lesgourg/class_public. Go to the class directory
-(cd class/ or class_public/ or class_vx.y.z/) and compile (make clean;
-make class). You can usually speed up compilation with the option -j:
-make -j class. If the first compilation attempt fails, you may need to
-open the Makefile and adapt the name of the compiler (default: gcc),
-of the optimization flag (default: -O4 -ffast-math) and of the OpenMP
-flag (default: -fopenmp; this flag is facultative, you are free to
-compile without OpenMP if you don't want parallel execution; note that
-you need the version 4.2 or higher of gcc to be able to compile with
--fopenmp). Many more details on the CLASS compilation are given on the
-wiki page
-
-https://github.com/lesgourg/class_public/wiki/Installation
-
-(in particular, for compiling on Mac >= 10.9 despite of the clang
-incompatibility with OpenMP).
+The process of compiling and running GDM_CLASS is strictly identical to the original CLASS code. Please refer to the CLASS code webpage (http://class-code.net/) and GitHub repository (https://github.com/lesgourg/class_public) for detailed instructions.
 
 To check that the code runs, type:
 
@@ -65,8 +44,8 @@ The automatically-generated documentation is located in
 On top of that, if you wish to modify the code, you will find lots of
 comments directly in the files.
 
-Python
-------
+Python wrapper
+--------------
 
 To use CLASS from python, or ipython notebooks, or from the Monte
 Python parameter extraction code, you need to compile not only the
@@ -105,8 +84,7 @@ https://github.com/lesgourg/class_public/wiki/Public-Contributing
 Using the code
 --------------
 
-You can use CLASS freely, provided that in your publications, you cite
-at least the paper `CLASS II: Approximation schemes <http://arxiv.org/abs/1104.2933>`. Feel free to cite more CLASS papers!
+While CLASS is free to use, authors request that publications using their code should cite at least the paper `CLASS II: Approximation schemes <http://arxiv.org/abs/1104.2933>`. Additionally, we request similarly 
 
 Support
 -------
