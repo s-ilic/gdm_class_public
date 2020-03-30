@@ -17,7 +17,7 @@ Generalized Dark Matter model implementation
 
 GDM_CLASS is a modification of the CLASS code which adds the phenomenologically motivated Generalized Dark Matter (GDM) model from [Hu (1998)](https://arxiv.org/abs/astro-ph/9801234). A detailed investigation of the theoretical aspects related to this model can be found in the [following article](https://arxiv.org/abs/1605.00649). The GDM model relaxes the assumptions about the pressureless nature of cold dark matter, and allows for non-zero sound speed and viscosity. The current implementation of the GDM model in GDM_CLASS allows the user to provide any choice for those three additional degree of freedom, in the form of three (smooth) binned functions: the equation of state, the sound speed, and the viscosity of the GDM fluid as a function of scale factor. The binning in time is entirely customizable by the user.
 
-A thorough description of the CLASS code parameters is available in the ``explanatory.ini`` file. All additional parameters introduced in GDM_CLASS are described in a separate file, ``TBD.ini``.
+A thorough description of the CLASS code parameters is available in the ``explanatory.ini`` file. All additional parameters introduced in GDM_CLASS are described in a separate file, ``GDM.ini``.
 
 (Say something about warning about the newtonian gauge ? In the ini ?)
 
