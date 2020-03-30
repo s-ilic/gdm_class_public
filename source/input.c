@@ -823,18 +823,6 @@ int input_read_parameters(
       }
     }
 
-    /* Flag for dynamic shear and algebraic non-adiabatic pressure (no by default) */
-    class_call(parser_read_string(pfc,
-                                  "dynamic_shear_gdm",
-                                  &(string1),
-                                  &(flag1),
-                                  errmsg),
-               errmsg,
-               errmsg);
-    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
-      ppt->dynamic_shear_gdm = _TRUE_;
-    }
-
     /* Binned time-dependent-only GDM */
     if (pba->type_gdm == time_only_bins_gdm) {
 
@@ -962,6 +950,18 @@ int input_read_parameters(
         }
       }
 
+    }
+
+    /* Flag for dynamic shear and algebraic non-adiabatic pressure (no by default) */
+    class_call(parser_read_string(pfc,
+                                  "dynamic_shear_gdm",
+                                  &(string1),
+                                  &(flag1),
+                                  errmsg),
+               errmsg,
+               errmsg);
+    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
+      ppt->dynamic_shear_gdm = _TRUE_;
     }
 
   }
