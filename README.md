@@ -3,7 +3,7 @@ GDM_CLASS: an implementation of the Generalized Dark Matter model in the Cosmic 
 
 **Original CLASS authors**: Julien Lesgourgues and Thomas Tram
 
-**GDM implementation authors**: Stéphane Ilic, Michael Kopp, Daniel B. Thomas
+**GDM implementation authors**: Stéphane Ilic, Michael Kopp, Daniel B. Thomas, Constantinos Skordis
 
 
 Compiling GDM_CLASS and getting started
