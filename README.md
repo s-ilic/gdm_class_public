@@ -34,10 +34,15 @@ Developing the code
 Participation to the further development of the code is welcome. Feel free to clone the current repository, develop your own branch, and get it merged to the public distribution. You may as well [open issues](https://github.com/s-ilic/gdm_class_public/issues) to discuss what new features you would like to see implemented.
 
 
-Using the code
---------------
+License
+-------
+The GDM_CLASS project is licensed under the MIT License. See the [LICENSE file](https://github.com/s-ilic/gdm_class_public/blob/master/LICENSE) for more details.
 
-While CLASS is free to use, its authors request that publications using their code should cite at least the paper ["CLASS II: Approximation schemes"](http://arxiv.org/abs/1104.2933). Additionally, we have a similar request to the users of our modified code, and ask them to cite the following paper: `TBD-TBD-TBD`.
+
+Code of conduct
+---------------
+
+While CLASS is free to use, its authors request that publications using their code should cite at least the paper ["CLASS II: Approximation schemes"](http://arxiv.org/abs/1104.2933). Additionally, we have a similar request to the users of our modified code, and ask them to cite the paper ["Dark Matter properties through cosmic history"](https://arxiv.org/abs/2004.09572).
 
 
 Support
