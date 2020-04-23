@@ -42,7 +42,7 @@ The GDM_CLASS project is licensed under the MIT License. See the [LICENSE file](
 Code of conduct
 ---------------
 
-While CLASS is free to use, its authors request that publications using their code should cite at least the paper ["CLASS II: Approximation schemes"](http://arxiv.org/abs/1104.2933). Additionally, we have a similar request to the users of our modified code, and ask them to cite the paper ["Dark Matter properties through cosmic history"](https://arxiv.org/abs/2004.09572).  (arXiv:2004.09572).
+While CLASS is free to use, its authors request that publications using their code should cite at least the paper ["CLASS II: Approximation schemes"](http://arxiv.org/abs/1104.2933). Additionally, we have a similar request to the users of our modified code, and ask them to cite the paper ["Dark Matter properties through cosmic history"](https://arxiv.org/abs/2004.09572) (arXiv:2004.09572).
 
 
 Support
