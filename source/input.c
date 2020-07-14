@@ -964,6 +964,18 @@ int input_read_parameters(
       ppt->dynamic_shear_gdm = _TRUE_;
     }
 
+        /* Flag for k squared dependent non-adiabatic pressure (no by default) */
+    class_call(parser_read_string(pfc,
+                                  "k2_Pinad_gdm",
+                                  &(string1),
+                                  &(flag1),
+                                  errmsg),
+               errmsg,
+               errmsg);
+    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
+      ppt->k2_Pinad_gdm = _TRUE_;
+    }
+
   }
 
   /** - END GDM_CLASS */
@@ -3459,6 +3471,7 @@ int input_default_params(
 
   /* GDM_CLASS: default values of new GDM variables */
   ppt->dynamic_shear_gdm = _FALSE_;
+  ppt->k2_Pinad_gdm      = _FALSE_;
   /* END GDM_CLASS */
 
   ppt->has_cl_cmb_temperature = _FALSE_;

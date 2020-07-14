@@ -121,6 +121,7 @@ struct perturbs
 
   /* GDM_CLASS: new perturbation variables */
   short dynamic_shear_gdm;  /**< do we have a dynamical or nondynamical fluid shear?*/
+  short k2_Pinad_gdm;       /**< do we have a k squared dependent non-adiabatic pressure? Pivot scale is currently fixed to 1Mpc*/
 
   /* perturbed recombination */
   /** Do we want to consider perturbed temperature and ionization fraction? */

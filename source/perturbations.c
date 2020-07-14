@@ -9181,8 +9181,12 @@ int perturb_derivs(double tau,
       cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
       cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
 
-      /** ---> specify whether \Pi_{nad} is algebraic or dynamic*/
+      /** ---> specify whether \Pi_{nad} is k-independent or k^2 dependent*/
       pinad_gdm = (cs2_gdm-ca2_gdm)*( y[pv->index_pt_delta_gdm] + 3*a_prime_over_a*(1.+w_gdm)*y[pv->index_pt_theta_gdm]/k2);
+
+      if (ppt->k2_Pinad_gdm == _TRUE_) {
+        pinad_gdm = pinad_gdm*k2;
+      }
 
       /** ---> fluid density (rewritten in terms of \Pi_{nad}) */
        dy[pv->index_pt_delta_gdm] =
