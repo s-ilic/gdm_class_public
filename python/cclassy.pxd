@@ -118,6 +118,10 @@ cdef extern from "class.h":
         double tau_d
         double ds_d
         double rs_d
+        double z_eq    # GDM_CLASS
+        double tau_eq  # GDM_CLASS
+        double rs_eq   # GDM_CLASS
+        double ds_eq   # GDM_CLASS
         double YHe
         double n_e
         double a_idm_dr

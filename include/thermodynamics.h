@@ -235,6 +235,11 @@ struct thermo
   double ds_d;    /**< physical sound horizon at baryon drag */
   double rs_d;    /**< comoving sound horizon at baryon drag */
 
+  double z_eq;    /**< GDM_CLASS: redshift at matter/radiation equality */
+  double tau_eq;  /**< GDM_CLASS: conformal time at matter/radiation equality */
+  double rs_eq;   /**< GDM_CLASS: comoving sound horizon at z_eq */
+  double ds_eq;   /**< GDM_CLASS: physical sound horizon at z_eq */
+
   double tau_cut; /**< at at which the visibility goes below a fixed fraction of the maximum visibility, used for an approximation in perturbation module */
   double angular_rescaling; /**< [ratio ra_rec / (tau0-tau_rec)]: gives CMB rescaling in angular space relative to flat model (=1 for curvature K=0) */
   double tau_free_streaming;     /**< minimum value of tau at which free-streaming approximation can be switched on */

@@ -1748,6 +1748,16 @@ cdef class Class:
                 value = 100.*self.th.rs_rec/self.th.da_rec/(1.+self.th.z_rec)
             elif name == '100*theta_star':
                 value = 100.*self.th.rs_star/self.th.da_star/(1.+self.th.z_star)
+            # BEGIN GDM_CLASS
+            elif name == 'z_eq':
+                value = self.th.z_eq
+            elif name == 'tau_eq':
+                value = self.th.tau_eq
+            elif name == 'rs_eq':
+                value = self.th.rs_eq
+            elif name == 'ds_eq':
+                value = self.th.ds_eq
+            # END GDM_CLASS
             elif name == 'YHe':
                 value = self.th.YHe
             elif name == 'n_e':
@@ -1810,8 +1820,6 @@ cdef class Class:
                 value = self.nl.sigma8[self.nl.index_pk_cb]
             elif name == 'k_eq':
                 value = self.ba.a_eq*self.ba.H_eq
-            elif name == 'z_eq':
-                value = 1. / self.ba.a_eq - 1.
 
             else:
                 raise CosmoSevereError("%s was not recognized as a derived parameter" % name)

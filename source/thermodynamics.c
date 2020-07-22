@@ -1052,6 +1052,21 @@ int thermodynamics_init(
 
   }
 
+  /** - GDM_CLASS: find conformal time at matter/radiation equality using background_tau_of_z() **/
+
+  pth->z_eq = 1./pba->a_eq-1.;
+
+  class_call(background_tau_of_z(pba,pba->z_eq,&(pth->tau_eq)),
+             pba->error_message,
+             pth->error_message);
+
+  class_call(background_at_tau(pba,pth->tau_eq, pba->long_info, pba->inter_normal, &last_index_back, pvecback),
+             pba->error_message,
+             pth->error_message);
+
+  pth->rs_eq=pvecback[pba->index_bg_rs];
+  pth->ds_eq=pth->rs_eq*pba->a_today/(1.+pth->z_eq);
+
   /** - find time (always after recombination) at which tau_c/tau
       falls below some threshold, defining tau_free_streaming */
 
