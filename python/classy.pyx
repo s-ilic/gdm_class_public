@@ -1810,6 +1810,8 @@ cdef class Class:
                 value = self.nl.sigma8[self.nl.index_pk_cb]
             elif name == 'k_eq':
                 value = self.ba.a_eq*self.ba.H_eq
+            elif name == 'z_eq':
+                value = 1. / self.ba.a_eq - 1.
 
             else:
                 raise CosmoSevereError("%s was not recognized as a derived parameter" % name)
