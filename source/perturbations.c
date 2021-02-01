@@ -5265,7 +5265,6 @@ int perturb_initial_conditions(struct precision * ppr,
                  ppt->error_message,
                  "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
       cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
-      printf("cs2= %e \n",cs2_gdm);
       cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
     }
     /* some other shortcut notations */
