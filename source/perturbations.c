@@ -5265,6 +5265,7 @@ int perturb_initial_conditions(struct precision * ppr,
                  ppt->error_message,
                  "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
       cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      printf("cs2= %e \n",cs2_gdm);
       cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
     }
     /* some other shortcut notations */
@@ -10447,6 +10448,16 @@ double cs2_gdm_of_a_and_k(struct background *pba,
   /* Time-only binned GDM case */
   if (pba->type_gdm == time_only_bins_gdm) {
       cs2=twoD_pixel(pba, a, k, pba->cs2_values_gdm);
+  }
+
+
+    /* k^2 dependent sound speed */
+  if (pba->k2_cs2_gdm == _TRUE_) {
+      double k_pivot=0.01;
+      cs2 = k*k/k_pivot/k_pivot*cs2;
+      if(cs2 > 1.){ //take care of potential superluminal speed at small scales: we transition from k^2 dependence to cs2=1 when necessary.
+        cs2=1.;
+      }
   }
 
   return  cs2;

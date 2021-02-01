@@ -976,6 +976,19 @@ int input_read_parameters(
       ppt->k2_Pinad_gdm = _TRUE_;
     }
 
+
+    /* Flag for k squared dependent sound speed (no by default) */
+    class_call(parser_read_string(pfc,
+                                  "k2_cs2_gdm",
+                                  &(string1),
+                                  &(flag1),
+                                  errmsg),
+               errmsg,
+               errmsg);
+    if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") !=   NULL))) {
+      pba->k2_cs2_gdm = _TRUE_;
+    }
+
   }
 
   /** - END GDM_CLASS */
@@ -3388,6 +3401,7 @@ int input_default_params(
   pba->type_gdm=time_only_bins_gdm;
   pba->smooth_bins_gdm = _FALSE_;
   pba->time_transition_width_gdm = 5.;
+  pba->k2_cs2_gdm      = _FALSE_;
   /* END GDM_CLASS */
   pba->Omega0_cdm = 0.12038/pow(pba->h,2);
   pba->Omega0_dcdmdr = 0.0;

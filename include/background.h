@@ -76,6 +76,8 @@ struct background
   double  time_values_gdm[_MAX_NUMBER_OF_TIME_BINS_]; /**< \f$ values of pixel edges of a-bins */
   double  time_transition_width_gdm;    /**< \f$ a number of order unity that determines the width of the smooth transition of time bins*/
   short   smooth_bins_gdm; /**< \f$ flag (default no) whether to use smooth bins */
+  short   k2_cs2_gdm;       /**< do we have a k squared dependent sound speed? Pivot scale is currently fixed to 0.01/Mpc*/
+
   /* END GDM_CLASS */
 
   double Omega0_cdm; /**< \f$ \Omega_{0 cdm} \f$: cold dark matter */
