@@ -940,7 +940,8 @@ extern "C" {
   double cs2_gdm_of_a_and_k(
                struct background *pba,
                double a,
-               double k
+               double k,
+               struct perturb_workspace * ppw
                );
 
   double cv2_gdm_of_a_and_k(

@@ -5264,7 +5264,7 @@ int perturb_initial_conditions(struct precision * ppr,
       class_test(w_gdm != ca2_gdm,
                  ppt->error_message,
                  "Stopped because w is not equal to ca2 initially, which is required by the GDM initial conditions.");
-      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k, ppw);
       cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
     }
     /* some other shortcut notations */
@@ -7100,7 +7100,7 @@ int perturb_total_stress_energy(
     if (pba->has_gdm == _TRUE_) {
       double w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
       double ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
-      double cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      double cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k,ppw);
       ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
       ppw->rho_plus_p_theta += (1.+w_gdm)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
       ppw->delta_p += (
@@ -8246,7 +8246,7 @@ int perturb_print_variables(double tau,
     if (pba->has_gdm == _TRUE_) {
       w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
       ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
-      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k,ppw);
       delta_gdm = y[ppw->pv->index_pt_delta_gdm];
       theta_gdm = y[ppw->pv->index_pt_theta_gdm];
       if (ppt->dynamic_shear_gdm == _TRUE_) {
@@ -9178,7 +9178,7 @@ int perturb_derivs(double tau,
           plus actual sound speed in the fluid rest frame cs2 and cv2*/
       w_gdm = ppw->pvecback[pba->index_bg_w_gdm];
       ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
-      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k);
+      cs2_gdm = cs2_gdm_of_a_and_k(pba,a,k,ppw);
       cv2_gdm = cv2_gdm_of_a_and_k(pba,a,k);
 
       /** ---> specify whether \Pi_{nad} is k-independent or k^2 dependent*/
@@ -10441,7 +10441,8 @@ double twoD_pixel(struct background *pba,
 // Add here the definitions of GDM sound speed and viscosity
 double cs2_gdm_of_a_and_k(struct background *pba,
                           double a,
-                          double k) {
+                          double k,
+                          struct perturb_workspace * ppw) {
   double cs2=0.;
 
   /* Time-only binned GDM case */
@@ -10452,11 +10453,20 @@ double cs2_gdm_of_a_and_k(struct background *pba,
 
     /* k^2 dependent sound speed */
   if (pba->k2_cs2_gdm == _TRUE_) {
-      double k_pivot=0.01;
-      cs2 = k*k/k_pivot/k_pivot*cs2;
+      double k_pivot=0.01;  //This is currently hard coded, since it likely does not help to specify this manually. 
+      double ca2_gdm = ppw->pvecback[pba->index_bg_ca2_gdm];
+      cs2 = ca2_gdm + k*k/k_pivot/k_pivot*cs2;
       if(cs2 > 1.){ //take care of potential superluminal speed at small scales: we transition from k^2 dependence to cs2=1 when necessary.
         cs2=1.;
       }
+      if(cs2 < 0.){ //take care of potential negative speed at large scales: we cap cs2 at cs2=0 when necessary. This cannot not occurr if ca2 is chosen non-negative. However ca2 might be negative even if w chosen non-negative.
+        cs2=0.;
+      }
+
+      // Maybe better to add something like?:
+      //class_test(ca2_gdm >= 0,
+      //           pba->error_message,
+      //           "Stopped because ca2 is not non-negative, which is required by the GDM perturbations to be stable for k2-dependent sound speed.");
   }
 
   return  cs2;
